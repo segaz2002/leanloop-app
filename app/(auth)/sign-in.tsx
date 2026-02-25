@@ -3,6 +3,8 @@ import { Link } from 'expo-router';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+
+import { useColorScheme } from '@/components/useColorScheme';
 import { z } from 'zod';
 
 import { useAuth } from '@/src/features/auth/AuthProvider';
@@ -17,6 +19,7 @@ type FormValues = z.infer<typeof schema>;
 export default function SignInScreen() {
   const { signIn, resendSignupEmail } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  const scheme = useColorScheme();
 
   const {
     control,
@@ -67,7 +70,8 @@ export default function SignInScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
-            style={styles.input}
+            style={[styles.input, scheme === 'dark' && styles.inputDark]}
+            placeholderTextColor={scheme === 'dark' ? '#94a3b8' : '#64748b'}
             placeholder="you@example.com"
             onBlur={onBlur}
             onChangeText={onChange}
@@ -84,7 +88,8 @@ export default function SignInScreen() {
         render={({ field: { onChange, onBlur, value } }) => (
           <TextInput
             secureTextEntry
-            style={styles.input}
+            style={[styles.input, scheme === 'dark' && styles.inputDark]}
+            placeholderTextColor={scheme === 'dark' ? '#94a3b8' : '#64748b'}
             placeholder="••••••••"
             onBlur={onBlur}
             onChangeText={onChange}
@@ -112,10 +117,17 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, marginTop: 12, marginBottom: 6, opacity: 0.8 },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: 'rgba(15, 23, 42, 0.18)',
+    backgroundColor: '#ffffff',
+    color: '#0f172a',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
+  },
+  inputDark: {
+    borderColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    color: '#e5e7eb',
   },
   button: {
     marginTop: 18,

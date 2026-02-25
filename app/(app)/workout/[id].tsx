@@ -2,6 +2,8 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { useColorScheme } from '@/components/useColorScheme';
+
 import type { WorkoutExercise, WorkoutSet } from '@/src/features/workout/workout.repo';
 import { useUnits } from '@/src/features/settings/UnitsProvider';
 import { addSet, completeWorkout, fetchLastPerformance, fetchWorkout } from '@/src/features/workout/workout.repo';
@@ -14,6 +16,7 @@ export default function WorkoutScreen() {
   const router = useRouter();
 
   const { units, toDisplayWeight, toKg } = useUnits();
+  const scheme = useColorScheme();
 
   const [loading, setLoading] = useState(true);
   const [dayCode, setDayCode] = useState<string>('');
@@ -157,7 +160,8 @@ export default function WorkoutScreen() {
               <View style={styles.field}>
                 <Text style={styles.fieldLabel}>{units}</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, scheme === 'dark' && styles.inputDark]}
+                  placeholderTextColor={scheme === 'dark' ? '#94a3b8' : '#64748b'}
                   keyboardType="numeric"
                   value={draft.weightKg}
                   onChangeText={(t) => setDrafts((p) => ({ ...p, [ex.id]: { ...draft, weightKg: t } }))}
@@ -167,7 +171,8 @@ export default function WorkoutScreen() {
               <View style={styles.field}>
                 <Text style={styles.fieldLabel}>reps</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, scheme === 'dark' && styles.inputDark]}
+                  placeholderTextColor={scheme === 'dark' ? '#94a3b8' : '#64748b'}
                   keyboardType="numeric"
                   value={draft.reps}
                   onChangeText={(t) => setDrafts((p) => ({ ...p, [ex.id]: { ...draft, reps: t } }))}
@@ -208,10 +213,17 @@ const styles = StyleSheet.create({
   fieldLabel: { fontSize: 12, opacity: 0.7, marginBottom: 4 },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: 'rgba(15, 23, 42, 0.18)',
+    backgroundColor: '#ffffff',
+    color: '#0f172a',
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 10,
+  },
+  inputDark: {
+    borderColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    color: '#e5e7eb',
   },
   addButton: {
     backgroundColor: '#111827',
