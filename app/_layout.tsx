@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { AuthProvider } from '@/src/features/auth/AuthProvider';
+import { ThemePreferenceProvider, useThemePreference } from '@/src/features/settings/ThemePreferenceProvider';
 import { UnitsProvider } from '@/src/features/settings/UnitsProvider';
 
 export {
@@ -41,19 +42,30 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  // Fallback for any UI that still uses the template hook.
+  useColorScheme();
 
   return (
     <AuthProvider>
       <UnitsProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(app)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-        </Stack>
-        </ThemeProvider>
+        <ThemePreferenceProvider>
+          <ThemeNav />
+        </ThemePreferenceProvider>
       </UnitsProvider>
     </AuthProvider>
+  );
+}
+
+function ThemeNav() {
+  const { resolved } = useThemePreference();
+
+  return (
+    <ThemeProvider value={resolved === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(app)" options={{ headerShown: false }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+      </Stack>
+    </ThemeProvider>
   );
 }

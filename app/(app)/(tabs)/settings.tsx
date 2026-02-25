@@ -3,7 +3,26 @@ import { Pressable } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
 import { useAuth } from '@/src/features/auth/AuthProvider';
+import { useThemePreference } from '@/src/features/settings/ThemePreferenceProvider';
 import { useUnits } from '@/src/features/settings/UnitsProvider';
+
+function ThemeModeRow() {
+  const { mode, setMode } = useThemePreference();
+
+  return (
+    <View style={styles.row}>
+      <Pressable style={[styles.pill, mode === 'system' && styles.pillActive]} onPress={() => setMode('system')}>
+        <Text style={[styles.pillText, mode === 'system' && styles.pillTextActive]}>System</Text>
+      </Pressable>
+      <Pressable style={[styles.pill, mode === 'light' && styles.pillActive]} onPress={() => setMode('light')}>
+        <Text style={[styles.pillText, mode === 'light' && styles.pillTextActive]}>Light</Text>
+      </Pressable>
+      <Pressable style={[styles.pill, mode === 'dark' && styles.pillActive]} onPress={() => setMode('dark')}>
+        <Text style={[styles.pillText, mode === 'dark' && styles.pillTextActive]}>Dark</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth();
@@ -16,6 +35,11 @@ export default function SettingsScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Account</Text>
         <Text>{user?.email ?? '—'}</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Theme</Text>
+        <ThemeModeRow />
       </View>
 
       <View style={styles.card}>
