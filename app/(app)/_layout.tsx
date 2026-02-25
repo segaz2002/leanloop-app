@@ -11,5 +11,10 @@ export default function AppLayout() {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="workout/[id]" options={{ headerShown: true, title: 'Workout' }} />
+    </Stack>
+  );
 }
