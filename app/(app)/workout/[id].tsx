@@ -119,7 +119,16 @@ export default function WorkoutScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Stack.Screen options={{ title: `Workout ${dayCode}` }} />
+      <Stack.Screen
+        options={{
+          title: `Workout ${dayCode}`,
+          headerLeft: () => (
+            <Pressable onPress={() => router.back()} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
+              <Text style={{ fontWeight: '800' }}>Back</Text>
+            </Pressable>
+          ),
+        }}
+      />
       <Text style={styles.title}>Workout {dayCode}</Text>
 
       {exercises.map((ex) => {

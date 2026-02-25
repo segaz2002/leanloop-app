@@ -29,7 +29,7 @@ export default function WorkoutsScreen() {
         'Workout in progress',
         'You already have an unfinished workout. Resume it, or abandon it and start a new one.',
         [
-          { text: 'Resume', onPress: () => router.push(`/(app)/workout/${active.id}`) },
+          { text: 'Resume', onPress: () => router.push(`/workout/${active.id}`) },
           {
             text: 'Abandon & start new',
             style: 'destructive',
@@ -57,7 +57,7 @@ export default function WorkoutsScreen() {
     try {
       const w = await startWorkout(day);
       setActive(w);
-      router.push(`/(app)/workout/${w.id}`);
+      router.push(`/workout/${w.id}`);
     } catch (e: any) {
       Alert.alert('Could not start workout', e?.message ?? 'Unknown error');
     } finally {
@@ -74,7 +74,7 @@ export default function WorkoutsScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>In progress</Text>
           <Text>Workout {active.day_code} is unfinished.</Text>
-          <Pressable style={styles.button} onPress={() => router.push(`/(app)/workout/${active.id}`)}>
+          <Pressable style={styles.button} onPress={() => router.push(`/workout/${active.id}`)}>
             <Text style={styles.buttonText}>Resume workout</Text>
           </Pressable>
         </View>

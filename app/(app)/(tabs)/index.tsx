@@ -45,7 +45,7 @@ export default function HomeScreen() {
 
   const onPrimary = async () => {
     if (active) {
-      router.push(`/(app)/workout/${active.id}`);
+      router.push(`/workout/${active.id}`);
       return;
     }
 
@@ -53,7 +53,7 @@ export default function HomeScreen() {
     try {
       const w = await startWorkout(nextUp);
       setActive(w);
-      router.push(`/(app)/workout/${w.id}`);
+      router.push(`/workout/${w.id}`);
     } catch (e: any) {
       Alert.alert('Could not start workout', e?.message ?? 'Unknown error');
     } finally {
@@ -68,7 +68,7 @@ export default function HomeScreen() {
       'Unfinished workout',
       'You have an unfinished workout. Do you want to resume it, or abandon it and start a new one?',
       [
-        { text: 'Resume', style: 'default', onPress: () => router.push(`/(app)/workout/${active.id}`) },
+        { text: 'Resume', style: 'default', onPress: () => router.push(`/workout/${active.id}`) },
         {
           text: 'Abandon & start new',
           style: 'destructive',
@@ -78,7 +78,7 @@ export default function HomeScreen() {
               setActive(null);
               const w = await startWorkout(nextUp);
               setActive(w);
-              router.push(`/(app)/workout/${w.id}`);
+              router.push(`/workout/${w.id}`);
             } catch (e: any) {
               Alert.alert('Error', e?.message ?? 'Could not start new workout');
             }
