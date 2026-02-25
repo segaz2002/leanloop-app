@@ -79,18 +79,52 @@ export default function ProgressScreen() {
           {thisWeek ? (
             <View style={[styles.card, isDark && styles.cardDark]}>
               <Text style={[styles.cardTitle, isDark && styles.textLight]}>This week</Text>
-              <Text style={[styles.muted, isDark && styles.mutedDark]}>
-                Grade: {gradeLabel(thisWeek.grade)}
-              </Text>
-              <Text style={[styles.line, isDark && styles.textLight]}>
-                Workouts: {thisWeek.workoutsCompleted} / 3
-              </Text>
-              <Text style={[styles.line, isDark && styles.textLight]}>
-                Protein days: {thisWeek.proteinDaysHit} / 4 {goals ? `(goal ${goals.protein_goal_g}g)` : ''}
-              </Text>
-              <Text style={[styles.line, isDark && styles.textLight]}>
-                Steps days: {thisWeek.stepsDaysHit} / 4 {goals ? `(goal ${goals.steps_goal})` : ''}
-              </Text>
+              <View style={styles.badgeRow}>
+                <View style={[styles.badge, styles[`badge_${thisWeek.grade}` as const]]}>
+                  <Text style={styles.badgeText}>{gradeLabel(thisWeek.grade)}</Text>
+                </View>
+                <Text style={[styles.muted, isDark && styles.mutedDark]}>
+                  Consistency grade for the week
+                </Text>
+              </View>
+
+              <View style={styles.quest}>
+                <Text style={[styles.questTitle, isDark && styles.textLight]}>3-Workout Quest</Text>
+                <Text style={[styles.muted, isDark && styles.mutedDark]}>
+                  {Math.min(thisWeek.workoutsCompleted, 3)} / 3 complete
+                  {thisWeek.workoutsCompleted >= 3 ? ' — Quest cleared' : ''}
+                </Text>
+                <View style={styles.barOuter}>
+                  <View style={[styles.barInner, { width: `${Math.min(thisWeek.workoutsCompleted / 3, 1) * 100}%` }]} />
+                </View>
+              </View>
+
+              <View style={styles.metricBlock}>
+                <Text style={[styles.line, isDark && styles.textLight]}>
+                  Workouts: {thisWeek.workoutsCompleted} (goal 3)
+                </Text>
+                <View style={styles.barOuter}>
+                  <View style={[styles.barInner, { width: `${Math.min(thisWeek.workoutsCompleted / 3, 1) * 100}%` }]} />
+                </View>
+              </View>
+
+              <View style={styles.metricBlock}>
+                <Text style={[styles.line, isDark && styles.textLight]}>
+                  Protein days: {thisWeek.proteinDaysHit} / 4 {goals ? `(goal ${goals.protein_goal_g}g)` : ''}
+                </Text>
+                <View style={styles.barOuter}>
+                  <View style={[styles.barInner, { width: `${Math.min(thisWeek.proteinDaysHit / 4, 1) * 100}%` }]} />
+                </View>
+              </View>
+
+              <View style={styles.metricBlock}>
+                <Text style={[styles.line, isDark && styles.textLight]}>
+                  Steps days: {thisWeek.stepsDaysHit} / 4 {goals ? `(goal ${goals.steps_goal})` : ''}
+                </Text>
+                <View style={styles.barOuter}>
+                  <View style={[styles.barInner, { width: `${Math.min(thisWeek.stepsDaysHit / 4, 1) * 100}%` }]} />
+                </View>
+              </View>
             </View>
           ) : null}
 
@@ -193,7 +227,43 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: { color: 'white', fontWeight: '900' },
-  weekRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  badgeText: { color: 'white', fontWeight: '900' },
+  badge_starter: { backgroundColor: '#334155' },
+  badge_bronze: { backgroundColor: '#b45309' },
+  badge_silver: { backgroundColor: '#475569' },
+  badge_gold: { backgroundColor: '#ca8a04' },
+
+  quest: {
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(15, 23, 42, 0.08)',
+    backgroundColor: 'rgba(15, 118, 110, 0.06)',
+    marginTop: 6,
+    marginBottom: 12,
+  },
+  questTitle: { fontWeight: '900', marginBottom: 4, color: '#0f172a' },
+
+  metricBlock: { marginTop: 10 },
+  barOuter: {
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: 'rgba(15, 23, 42, 0.10)',
+    overflow: 'hidden',
+    marginTop: 6,
+  },
+  barInner: {
+    height: '100%',
+    backgroundColor: '#0f766e',
+  },
+
+  weekRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
   weekLabel: { fontWeight: '800', color: '#0f172a' },
   weekValue: { color: '#475569' },
   help: { marginTop: 10, fontSize: 12 },
