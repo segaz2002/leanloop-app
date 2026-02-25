@@ -1,7 +1,8 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 
+import { Text, View } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
 
 import type { WorkoutExercise, WorkoutSet } from '@/src/features/workout/workout.repo';
@@ -120,36 +121,38 @@ export default function WorkoutScreen() {
     );
   }
 
+  const isDark = scheme === 'dark';
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, isDark && styles.containerDark]}>
       <Stack.Screen
         options={{
           title: `Workout ${dayCode}`,
           headerLeft: () => (
             <Pressable onPress={() => router.back()} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
-              <Text style={{ fontWeight: '800' }}>Back</Text>
+              <Text style={{ fontWeight: '800', color: isDark ? '#e5e7eb' : '#0f172a' }}>Back</Text>
             </Pressable>
           ),
         }}
       />
-      <Text style={styles.title}>Workout {dayCode}</Text>
+      <Text style={[styles.title, isDark && styles.titleDark]}>Workout {dayCode}</Text>
 
       {exercises.map((ex) => {
         const logged = setsByExercise[ex.id] ?? [];
         const draft = drafts[ex.id] ?? { reps: '', weightKg: '' };
 
         return (
-          <View key={ex.id} style={styles.card}>
-            <Text style={styles.exerciseTitle}>{ex.position}. {ex.exercise_name}</Text>
-            <Text style={styles.muted}>
+          <View key={ex.id} style={[styles.card, isDark && styles.cardDark]}>
+            <Text style={[styles.exerciseTitle, isDark && styles.textLight]}>{ex.position}. {ex.exercise_name}</Text>
+            <Text style={[styles.muted, isDark && styles.mutedDark]}>
               {ex.sets_planned} × {ex.rep_min}–{ex.rep_max}
             </Text>
-            {lastPerf[ex.id] ? <Text style={styles.muted}>{lastPerf[ex.id]}</Text> : null}
+            {lastPerf[ex.id] ? <Text style={[styles.muted, isDark && styles.mutedDark]}>{lastPerf[ex.id]}</Text> : null}
 
             {logged.length ? (
               <View style={styles.loggedSets}>
                 {logged.map((s) => (
-                  <Text key={s.id} style={styles.loggedSetText}>
+                  <Text key={s.id} style={[styles.loggedSetText, isDark && styles.textLight]}>
                     Set {s.set_index}: {s.weight_kg == null ? '—' : toDisplayWeight(Number(s.weight_kg)).toFixed(1).replace(/\.0$/, '')} {units} × {s.reps}
                   </Text>
                 ))}
@@ -195,22 +198,31 @@ export default function WorkoutScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
-  title: { fontSize: 22, fontWeight: '800', marginBottom: 12 },
+  container: { padding: 20, backgroundColor: '#ffffff' },
+  containerDark: { backgroundColor: '#020617' },
+  title: { fontSize: 22, fontWeight: '800', marginBottom: 12, color: '#0f172a' },
+  titleDark: { color: '#e5e7eb' },
   card: {
     padding: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
+    borderColor: 'rgba(15, 23, 42, 0.08)',
+    backgroundColor: '#ffffff',
     marginBottom: 12,
   },
-  exerciseTitle: { fontWeight: '800', marginBottom: 6 },
-  muted: { opacity: 0.75 },
+  cardDark: {
+    borderColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  exerciseTitle: { fontWeight: '800', marginBottom: 6, color: '#0f172a' },
+  textLight: { color: '#e5e7eb' },
+  muted: { color: '#334155' },
+  mutedDark: { color: '#94a3b8' },
   loggedSets: { marginTop: 10, marginBottom: 10 },
-  loggedSetText: { opacity: 0.85, marginBottom: 2 },
+  loggedSetText: { marginBottom: 2, color: '#0f172a' },
   row: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginTop: 10 },
   field: { flex: 1 },
-  fieldLabel: { fontSize: 12, opacity: 0.7, marginBottom: 4 },
+  fieldLabel: { fontSize: 12, marginBottom: 4, color: '#475569' },
   input: {
     borderWidth: 1,
     borderColor: 'rgba(15, 23, 42, 0.18)',
