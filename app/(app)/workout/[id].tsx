@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import type { WorkoutExercise, WorkoutSet } from '@/src/features/workout/workout.repo';
+import { useUnits } from '@/src/features/settings/UnitsProvider';
 import { addSet, completeWorkout, fetchLastPerformance, fetchWorkout } from '@/src/features/workout/workout.repo';
 
 type SetDraft = { reps: string; weightKg: string };
@@ -11,6 +12,8 @@ export default function WorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const workoutId = String(id);
   const router = useRouter();
+
+  const { units, toDisplayWeight, toKg } = useUnits();
 
   const [loading, setLoading] = useState(true);
   const [dayCode, setDayCode] = useState<string>('');
@@ -41,7 +44,9 @@ export default function WorkoutScreen() {
         data.exercises.map(async (ex) => {
           const lp = await fetchLastPerformance(ex.exercise_name);
           if (lp?.weight_kg != null && lp?.reps != null) {
-            perf[ex.id] = `Last: ${lp.weight_kg} kg × ${lp.reps}`;
+            const w = toDisplayWeight(Number(lp.weight_kg));
+            const wTxt = Number.isFinite(w) ? w.toFixed(1).replace(/\.0$/, '') : String(lp.weight_kg);
+            perf[ex.id] = `Last: ${wTxt} ${units} × ${lp.reps}`;
           }
         }),
       );
@@ -61,25 +66,26 @@ export default function WorkoutScreen() {
   const onAddSet = async (ex: WorkoutExercise) => {
     const d = drafts[ex.id] ?? { reps: '', weightKg: '' };
     const reps = Number(d.reps);
-    const weight = d.weightKg.trim() === '' ? null : Number(d.weightKg);
+    const weightInput = d.weightKg.trim() === '' ? null : Number(d.weightKg);
 
     if (!Number.isFinite(reps) || reps <= 0) {
       Alert.alert('Invalid reps', 'Enter reps (e.g., 8)');
       return;
     }
-    if (weight !== null && (!Number.isFinite(weight) || weight < 0)) {
-      Alert.alert('Invalid weight', 'Enter weight in kg (e.g., 20)');
+    if (weightInput !== null && (!Number.isFinite(weightInput) || weightInput < 0)) {
+      Alert.alert('Invalid weight', `Enter weight in ${units} (e.g., 20)`);
       return;
     }
 
     const existing = setsByExercise[ex.id]?.length ?? 0;
 
     try {
+      const weightKg = weightInput === null ? null : Number(toKg(weightInput).toFixed(3));
       const inserted = await addSet({
         workoutExerciseId: ex.id,
         setIndex: existing + 1,
         reps,
-        weightKg: weight,
+        weightKg,
       });
       setSets((prev) => [...prev, inserted]);
       setDrafts((prev) => ({ ...prev, [ex.id]: { reps: '', weightKg: '' } }));
@@ -126,7 +132,7 @@ export default function WorkoutScreen() {
               <View style={styles.loggedSets}>
                 {logged.map((s) => (
                   <Text key={s.id} style={styles.loggedSetText}>
-                    Set {s.set_index}: {s.weight_kg ?? '—'} kg × {s.reps}
+                    Set {s.set_index}: {s.weight_kg == null ? '—' : toDisplayWeight(Number(s.weight_kg)).toFixed(1).replace(/\.0$/, '')} {units} × {s.reps}
                   </Text>
                 ))}
               </View>
@@ -134,7 +140,7 @@ export default function WorkoutScreen() {
 
             <View style={styles.row}>
               <View style={styles.field}>
-                <Text style={styles.fieldLabel}>kg</Text>
+                <Text style={styles.fieldLabel}>{units}</Text>
                 <TextInput
                   style={styles.input}
                   keyboardType="numeric"

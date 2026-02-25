@@ -27,10 +27,10 @@ export default function HomeScreen() {
       <Text style={styles.subtitle}>Your weekly plan that adapts.</Text>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Next up</Text>
-        <Text>Workout A</Text>
+        <Text style={styles.cardTitle}>Today</Text>
+        <Text>Next up: Workout A</Text>
         <Pressable style={[styles.primaryButton, starting && styles.buttonDisabled]} onPress={onStartA} disabled={starting}>
-          <Text style={styles.primaryButtonText}>{starting ? 'Starting…' : 'Start Workout A'}</Text>
+          <Text style={styles.primaryButtonText}>{starting ? 'Starting…' : "Start today’s workout"}</Text>
         </Pressable>
       </View>
 
