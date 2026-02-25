@@ -9,6 +9,8 @@ import type { WorkoutExercise, WorkoutSet } from '@/src/features/workout/workout
 import { useUnits } from '@/src/features/settings/UnitsProvider';
 import { addSet, completeWorkout, fetchLastPerformance, fetchWorkout } from '@/src/features/workout/workout.repo';
 
+const REST_SECONDS_DEFAULT = 90;
+
 type SetDraft = { reps: string; weightKg: string };
 
 export default function WorkoutScreen() {
@@ -25,6 +27,8 @@ export default function WorkoutScreen() {
   const [sets, setSets] = useState<WorkoutSet[]>([]);
   const [drafts, setDrafts] = useState<Record<string, SetDraft>>({});
   const [lastPerf, setLastPerf] = useState<Record<string, string>>({});
+
+  const [restSeconds, setRestSeconds] = useState<number>(0);
 
   const setsByExercise = useMemo(() => {
     const map: Record<string, WorkoutSet[]> = {};
@@ -67,10 +71,17 @@ export default function WorkoutScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workoutId]);
 
-  const onAddSet = async (ex: WorkoutExercise) => {
-    const d = drafts[ex.id] ?? { reps: '', weightKg: '' };
-    const reps = Number(d.reps);
-    const weightInput = d.weightKg.trim() === '' ? null : Number(d.weightKg);
+  useEffect(() => {
+    if (restSeconds <= 0) return;
+    const t = setInterval(() => {
+      setRestSeconds((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    return () => clearInterval(t);
+  }, [restSeconds]);
+
+  const onAddSet = async (ex: WorkoutExercise, draft: SetDraft) => {
+    const reps = Number(draft.reps);
+    const weightInput = draft.weightKg.trim() === '' ? null : Number(draft.weightKg);
 
     if (!Number.isFinite(reps) || reps <= 0) {
       Alert.alert('Invalid reps', 'Enter reps (e.g., 8)');
@@ -92,7 +103,18 @@ export default function WorkoutScreen() {
         weightKg,
       });
       setSets((prev) => [...prev, inserted]);
-      setDrafts((prev) => ({ ...prev, [ex.id]: { reps: '', weightKg: '' } }));
+
+      // Prefill next set with last values (beginner-friendly).
+      setDrafts((prev) => ({
+        ...prev,
+        [ex.id]: {
+          weightKg: draft.weightKg,
+          reps: draft.reps,
+        },
+      }));
+
+      // Auto-start rest timer.
+      setRestSeconds(REST_SECONDS_DEFAULT);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to add set');
     }
@@ -133,20 +155,55 @@ export default function WorkoutScreen() {
               <Text style={{ fontWeight: '800', color: isDark ? '#e5e7eb' : '#0f172a' }}>Back</Text>
             </Pressable>
           ),
+          headerRight: () =>
+            restSeconds > 0 ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 10 }}>
+                <Text style={{ fontWeight: '900', color: isDark ? '#e5e7eb' : '#0f172a' }}>
+                  Rest {Math.floor(restSeconds / 60)}:{String(restSeconds % 60).padStart(2, '0')}
+                </Text>
+                <Pressable
+                  onPress={() => setRestSeconds((s) => s + 15)}
+                  style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }}
+                >
+                  <Text style={{ fontWeight: '800', color: isDark ? '#e5e7eb' : '#0f172a' }}>+15</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setRestSeconds(0)}
+                  style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }}
+                >
+                  <Text style={{ fontWeight: '800', color: isDark ? '#e5e7eb' : '#0f172a' }}>Skip</Text>
+                </Pressable>
+              </View>
+            ) : null,
         }}
       />
       <Text style={[styles.title, isDark && styles.titleDark]}>Workout {dayCode}</Text>
 
       {exercises.map((ex) => {
         const logged = setsByExercise[ex.id] ?? [];
-        const draft = drafts[ex.id] ?? { reps: '', weightKg: '' };
+        const last = logged.length ? logged[logged.length - 1] : null;
+
+        const derivedDraft: SetDraft =
+          drafts[ex.id] ??
+          ({
+            weightKg:
+              last?.weight_kg == null
+                ? ''
+                : toDisplayWeight(Number(last.weight_kg)).toFixed(1).replace(/\.0$/, ''),
+            reps: last?.reps == null ? '' : String(last.reps),
+          } satisfies SetDraft);
+
+        const nextSet = (logged.length ?? 0) + 1;
 
         return (
           <View key={ex.id} style={[styles.card, isDark && styles.cardDark]}>
-            <Text style={[styles.exerciseTitle, isDark && styles.textLight]}>{ex.position}. {ex.exercise_name}</Text>
+            <Text style={[styles.exerciseTitle, isDark && styles.textLight]}>
+              {ex.position}. {ex.exercise_name}
+            </Text>
             <Text style={[styles.muted, isDark && styles.mutedDark]}>
               {ex.sets_planned} × {ex.rep_min}–{ex.rep_max}
             </Text>
+            <Text style={[styles.muted, isDark && styles.mutedDark]}>Set {nextSet} of {ex.sets_planned}</Text>
             {lastPerf[ex.id] ? <Text style={[styles.muted, isDark && styles.mutedDark]}>{lastPerf[ex.id]}</Text> : null}
 
             {logged.length ? (
@@ -161,31 +218,32 @@ export default function WorkoutScreen() {
 
             <View style={styles.row}>
               <View style={styles.field}>
-                <Text style={styles.fieldLabel}>{units}</Text>
+                <Text style={[styles.fieldLabel, isDark && styles.fieldLabelDark]}>Weight ({units})</Text>
                 <TextInput
                   style={[styles.input, scheme === 'dark' && styles.inputDark]}
                   placeholderTextColor={scheme === 'dark' ? '#94a3b8' : '#64748b'}
                   keyboardType="numeric"
-                  value={draft.weightKg}
-                  onChangeText={(t) => setDrafts((p) => ({ ...p, [ex.id]: { ...draft, weightKg: t } }))}
+                  value={derivedDraft.weightKg}
+                  onChangeText={(t) => setDrafts((p) => ({ ...p, [ex.id]: { ...derivedDraft, weightKg: t } }))}
                   placeholder="20"
                 />
               </View>
               <View style={styles.field}>
-                <Text style={styles.fieldLabel}>reps</Text>
+                <Text style={[styles.fieldLabel, isDark && styles.fieldLabelDark]}>Reps</Text>
                 <TextInput
                   style={[styles.input, scheme === 'dark' && styles.inputDark]}
                   placeholderTextColor={scheme === 'dark' ? '#94a3b8' : '#64748b'}
                   keyboardType="numeric"
-                  value={draft.reps}
-                  onChangeText={(t) => setDrafts((p) => ({ ...p, [ex.id]: { ...draft, reps: t } }))}
+                  value={derivedDraft.reps}
+                  onChangeText={(t) => setDrafts((p) => ({ ...p, [ex.id]: { ...derivedDraft, reps: t } }))}
                   placeholder="8"
                 />
               </View>
-              <Pressable style={styles.addButton} onPress={() => onAddSet(ex)}>
-                <Text style={styles.addButtonText}>Add</Text>
-              </Pressable>
             </View>
+
+            <Pressable style={styles.completeButton} onPress={() => onAddSet(ex, derivedDraft)}>
+              <Text style={styles.completeButtonText}>Complete set</Text>
+            </Pressable>
           </View>
         );
       })}
@@ -223,6 +281,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginTop: 10 },
   field: { flex: 1 },
   fieldLabel: { fontSize: 12, marginBottom: 4, color: '#475569' },
+  fieldLabelDark: { color: '#94a3b8' },
   input: {
     borderWidth: 1,
     borderColor: 'rgba(15, 23, 42, 0.18)',
@@ -237,13 +296,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.06)',
     color: '#e5e7eb',
   },
-  addButton: {
+  completeButton: {
+    marginTop: 10,
     backgroundColor: '#111827',
-    paddingHorizontal: 14,
     paddingVertical: 12,
     borderRadius: 12,
+    alignItems: 'center',
   },
-  addButtonText: { color: 'white', fontWeight: '800' },
+  completeButtonText: { color: 'white', fontWeight: '900' },
   finishButton: {
     marginTop: 8,
     backgroundColor: '#0f766e',
