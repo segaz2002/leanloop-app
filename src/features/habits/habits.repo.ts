@@ -20,10 +20,16 @@ export async function upsertHabitsForDate(args: {
     .from('habits_daily')
     .upsert({ user_id: user.id, date: args.date, protein_g: args.protein_g, steps: args.steps })
     .select('user_id, date, protein_g, steps')
-    .single();
+    .maybeSingle();
 
   if (res.error) throw res.error;
-  return res.data as HabitsDaily;
+
+  // Some PostgREST/Supabase setups may not return a single object representation reliably for upsert.
+  // In v1, we can proceed even if the response body is empty.
+  return (
+    (res.data as HabitsDaily | null) ??
+    ({ user_id: user.id, date: args.date, protein_g: args.protein_g, steps: args.steps } as HabitsDaily)
+  );
 }
 
 export async function fetchHabitsRange(args: { from: string; to: string }) {

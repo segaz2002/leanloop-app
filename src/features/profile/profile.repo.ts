@@ -21,12 +21,23 @@ export async function fetchMyProfile(): Promise<Profile> {
   const user = userRes.data.user;
   if (!user) throw new Error('Not authenticated');
 
+  // Profiles are created via trigger + best-effort upsert on auth, but in case the row
+  // doesn't exist yet, create it and retry.
   const res = await supabase
     .from('profiles')
     .select('id, protein_goal_g, steps_goal')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
+
   if (res.error) throw res.error;
+
+  if (!res.data) {
+    const ins = await supabase.from('profiles').insert({ id: user.id }).select('id, protein_goal_g, steps_goal').maybeSingle();
+    if (ins.error) throw ins.error;
+    if (!ins.data) throw new Error('Could not create profile');
+    return ins.data as Profile;
+  }
+
   return res.data as Profile;
 }
 
