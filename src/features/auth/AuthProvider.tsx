@@ -70,8 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       resendSignupEmail: async (email) => {
         // Resend confirmation email.
         // Supabase uses type 'signup' for resending signup confirmations.
-        // @ts-expect-error: older supabase-js versions use a slightly different signature
-        const { error } = await supabase.auth.resend({ type: 'signup', email });
+        const { error } = await supabase.auth.resend({ type: 'signup', email } as any);
         if (error) return { ok: false, error: error.message };
         return { ok: true };
       },
