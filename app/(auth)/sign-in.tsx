@@ -1,0 +1,131 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Link } from 'expo-router';
+import React, { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { z } from 'zod';
+
+import { useAuth } from '@/src/features/auth/AuthProvider';
+
+const schema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
+type FormValues = z.infer<typeof schema>;
+
+export default function SignInScreen() {
+  const { signIn, resendSignupEmail } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    getValues,
+    formState: { errors },
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  const onSubmit = handleSubmit(async (values) => {
+    setSubmitting(true);
+    try {
+      const res = await signIn(values.email.trim(), values.password);
+      if (!res.ok) {
+        // If confirmations are on, Supabase often returns "Email not confirmed".
+        Alert.alert('Could not sign in', res.error, [
+          {
+            text: 'Resend confirmation email',
+            onPress: async () => {
+              const email = getValues('email').trim();
+              if (!email) return;
+              const rr = await resendSignupEmail(email);
+              if (!rr.ok) Alert.alert('Could not resend', rr.error);
+              else Alert.alert('Sent', 'Check your inbox for the confirmation email.');
+            },
+          },
+          { text: 'OK' },
+        ]);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  });
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>LeanLoop</Text>
+      <Text style={styles.subtitle}>Sign in</Text>
+
+      <Text style={styles.label}>Email</Text>
+      <Controller
+        control={control}
+        name="email"
+        render={({ field: { onChange, onBlur, value } }) => (
+          <TextInput
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            style={styles.input}
+            placeholder="you@example.com"
+            onBlur={onBlur}
+            onChangeText={onChange}
+            value={value}
+          />
+        )}
+      />
+      {errors.email ? <Text style={styles.error}>{errors.email.message}</Text> : null}
+
+      <Text style={styles.label}>Password</Text>
+      <Controller
+        control={control}
+        name="password"
+        render={({ field: { onChange, onBlur, value } }) => (
+          <TextInput
+            secureTextEntry
+            style={styles.input}
+            placeholder="••••••••"
+            onBlur={onBlur}
+            onChangeText={onChange}
+            value={value}
+          />
+        )}
+      />
+      {errors.password ? <Text style={styles.error}>{errors.password.message}</Text> : null}
+
+      <Pressable style={[styles.button, submitting && styles.buttonDisabled]} onPress={onSubmit} disabled={submitting}>
+        <Text style={styles.buttonText}>{submitting ? 'Signing in…' : 'Sign in'}</Text>
+      </Pressable>
+
+      <Text style={styles.footer}>
+        Don’t have an account? <Link href="/(auth)/sign-up">Sign up</Link>
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 24, justifyContent: 'center' },
+  title: { fontSize: 28, fontWeight: '700', marginBottom: 8 },
+  subtitle: { fontSize: 18, marginBottom: 16, opacity: 0.8 },
+  label: { fontSize: 14, marginTop: 12, marginBottom: 6, opacity: 0.8 },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  button: {
+    marginTop: 18,
+    backgroundColor: '#111827',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  buttonDisabled: { opacity: 0.6 },
+  buttonText: { color: 'white', fontWeight: '700' },
+  error: { marginTop: 6, color: '#b91c1c' },
+  footer: { marginTop: 16, opacity: 0.8 },
+});
