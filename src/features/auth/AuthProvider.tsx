@@ -37,8 +37,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     })();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       setSession(newSession);
+      // Best-effort: ensure profile exists for progress/habits.
+      if (newSession?.user) {
+        try {
+          await supabase.from('profiles').upsert({ id: newSession.user.id });
+        } catch {
+          // ignore
+        }
+      }
     });
 
     return () => {
