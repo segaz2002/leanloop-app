@@ -5,6 +5,7 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'r
 import { Text, View } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
 
+import { getExerciseSlugFromName } from '@/src/features/exercise/catalog';
 import type { WorkoutExercise, WorkoutSet } from '@/src/features/workout/workout.repo';
 import { useUnits } from '@/src/features/settings/UnitsProvider';
 import { addSet, completeWorkout, fetchLastPerformance, fetchWorkout } from '@/src/features/workout/workout.repo';
@@ -227,9 +228,11 @@ export default function WorkoutScreen() {
 
         return (
           <View key={ex.id} style={[styles.card, isDark && styles.cardDark]}>
-            <Text style={[styles.exerciseTitle, isDark && styles.textLight]}>
-              {ex.position}. {ex.exercise_name}
-            </Text>
+            <Pressable onPress={() => router.push(`/exercise/${getExerciseSlugFromName(ex.exercise_name)}`)}>
+              <Text style={[styles.exerciseTitle, isDark && styles.textLight]}>
+                {ex.position}. {ex.exercise_name}
+              </Text>
+            </Pressable>
             <Text style={[styles.muted, isDark && styles.mutedDark]}>
               {ex.sets_planned} × {ex.rep_min}–{ex.rep_max}
             </Text>
