@@ -170,3 +170,19 @@ export async function fetchLastPerformance(exerciseName: string) {
   if (res.error) return null;
   return (res.data?.[0] as any) ?? null;
 }
+
+export async function updateSet(args: { id: string; reps: number; weightKg: number | null }) {
+  const res = await supabase
+    .from('workout_sets')
+    .update({ reps: args.reps, weight_kg: args.weightKg })
+    .eq('id', args.id)
+    .select('id, workout_exercise_id, set_index, reps, weight_kg, created_at')
+    .single();
+  if (res.error) throw res.error;
+  return res.data as WorkoutSet;
+}
+
+export async function deleteSet(id: string) {
+  const res = await supabase.from('workout_sets').delete().eq('id', id).select('id').single();
+  if (res.error) throw res.error;
+}

@@ -8,7 +8,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { getExerciseSlugFromName } from '@/src/features/exercise/catalog';
 import type { WorkoutExercise, WorkoutSet } from '@/src/features/workout/workout.repo';
 import { useUnits } from '@/src/features/settings/UnitsProvider';
-import { addSet, completeWorkout, fetchLastPerformance, fetchWorkout } from '@/src/features/workout/workout.repo';
+import { addSet, completeWorkout, deleteSet, fetchLastPerformance, fetchWorkout, updateSet } from '@/src/features/workout/workout.repo';
 
 const REST_SECONDS_DEFAULT = 90;
 
@@ -31,6 +31,9 @@ export default function WorkoutScreen() {
 
   const [restSeconds, setRestSeconds] = useState<number>(0);
   const [banner, setBanner] = useState<string | null>(null);
+  const [undo, setUndo] = useState<WorkoutSet | null>(null);
+  const [editingSetId, setEditingSetId] = useState<string | null>(null);
+  const [editingDraft, setEditingDraft] = useState<{ weight: string; reps: string } | null>(null);
   const [finishing, setFinishing] = useState(false);
 
   const setsByExercise = useMemo(() => {
@@ -129,6 +132,84 @@ export default function WorkoutScreen() {
     }
   };
 
+  const clearUndoLater = () => {
+    setTimeout(() => {
+      setUndo(null);
+    }, 6000);
+  };
+
+  const onDeleteLoggedSet = async (s: WorkoutSet) => {
+    try {
+      setBanner(null);
+      await deleteSet(s.id);
+      setSets((prev) => prev.filter((x) => x.id !== s.id));
+      setUndo(s);
+      setBanner('Set deleted.');
+      clearUndoLater();
+    } catch (e: any) {
+      const msg = e?.message ?? 'Failed to delete set';
+      setBanner(msg);
+      if (Platform.OS !== 'web') Alert.alert('Error', msg);
+    }
+  };
+
+  const onUndo = async () => {
+    if (!undo) return;
+    try {
+      setBanner(null);
+      const inserted = await addSet({
+        workoutExerciseId: undo.workout_exercise_id,
+        setIndex: undo.set_index,
+        reps: undo.reps,
+        weightKg: undo.weight_kg,
+      });
+      setSets((prev) => [...prev, inserted]);
+      setUndo(null);
+      setBanner('Undo complete.');
+    } catch (e: any) {
+      const msg = e?.message ?? 'Failed to undo';
+      setBanner(msg);
+      if (Platform.OS !== 'web') Alert.alert('Error', msg);
+    }
+  };
+
+  const onStartEdit = (s: WorkoutSet) => {
+    setEditingSetId(s.id);
+    setEditingDraft({
+      weight: s.weight_kg == null ? '' : toDisplayWeight(Number(s.weight_kg)).toFixed(1).replace(/\.0$/, ''),
+      reps: String(s.reps),
+    });
+  };
+
+  const onSaveEdit = async (s: WorkoutSet) => {
+    if (!editingDraft) return;
+
+    const reps = Number(editingDraft.reps);
+    const weightInput = editingDraft.weight.trim() === '' ? null : Number(editingDraft.weight);
+
+    if (!Number.isFinite(reps) || reps <= 0) {
+      setBanner('Enter reps (e.g., 8)');
+      return;
+    }
+    if (weightInput !== null && (!Number.isFinite(weightInput) || weightInput < 0)) {
+      setBanner(`Enter weight in ${units} (e.g., 20)`);
+      return;
+    }
+
+    try {
+      setBanner(null);
+      const weightKg = weightInput === null ? null : Number(toKg(weightInput).toFixed(3));
+      const updated = await updateSet({ id: s.id, reps, weightKg });
+      setSets((prev) => prev.map((x) => (x.id === s.id ? updated : x)));
+      setEditingSetId(null);
+      setEditingDraft(null);
+    } catch (e: any) {
+      const msg = e?.message ?? 'Failed to update set';
+      setBanner(msg);
+      if (Platform.OS !== 'web') Alert.alert('Error', msg);
+    }
+  };
+
   const onFinish = async () => {
     if (finishing) return;
 
@@ -207,6 +288,11 @@ export default function WorkoutScreen() {
       {banner ? (
         <View style={[styles.banner, isDark && styles.bannerDark]}>
           <Text style={[styles.bannerText, isDark && styles.textLight]}>{banner}</Text>
+          {undo ? (
+            <Pressable onPress={onUndo} style={[styles.undoButton, isDark && styles.undoButtonDark]}>
+              <Text style={[styles.undoText, isDark && styles.textLight]}>Undo</Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
 
@@ -241,11 +327,61 @@ export default function WorkoutScreen() {
 
             {logged.length ? (
               <View style={styles.loggedSets}>
-                {logged.map((s) => (
-                  <Text key={s.id} style={[styles.loggedSetText, isDark && styles.textLight]}>
-                    Set {s.set_index}: {s.weight_kg == null ? '—' : toDisplayWeight(Number(s.weight_kg)).toFixed(1).replace(/\.0$/, '')} {units} × {s.reps}
-                  </Text>
-                ))}
+                {logged.map((s) => {
+                  const isEditing = editingSetId === s.id;
+                  return (
+                    <View key={s.id} style={styles.loggedSetRow}>
+                      {isEditing ? (
+                        <>
+                          <Text style={[styles.loggedSetText, isDark && styles.textLight]}>Set {s.set_index}:</Text>
+                          <TextInput
+                            style={[styles.input, scheme === 'dark' && styles.inputDark, styles.inlineInput]}
+                            placeholderTextColor={scheme === 'dark' ? '#94a3b8' : '#64748b'}
+                            keyboardType="numeric"
+                            value={editingDraft?.weight ?? ''}
+                            onChangeText={(t) => setEditingDraft((d) => ({ ...(d ?? { weight: '', reps: '' }), weight: t }))}
+                            placeholder="20"
+                          />
+                          <Text style={[styles.loggedSetText, isDark && styles.textLight]}>{units} ×</Text>
+                          <TextInput
+                            style={[styles.input, scheme === 'dark' && styles.inputDark, styles.inlineInput]}
+                            placeholderTextColor={scheme === 'dark' ? '#94a3b8' : '#64748b'}
+                            keyboardType="numeric"
+                            value={editingDraft?.reps ?? ''}
+                            onChangeText={(t) => setEditingDraft((d) => ({ ...(d ?? { weight: '', reps: '' }), reps: t }))}
+                            placeholder="8"
+                          />
+                          <Text style={[styles.loggedSetText, isDark && styles.textLight]}>reps</Text>
+
+                          <Pressable style={styles.smallButton} onPress={() => onSaveEdit(s)}>
+                            <Text style={styles.smallButtonText}>Save</Text>
+                          </Pressable>
+                          <Pressable
+                            style={[styles.smallButton, styles.smallButtonSecondary]}
+                            onPress={() => {
+                              setEditingSetId(null);
+                              setEditingDraft(null);
+                            }}
+                          >
+                            <Text style={styles.smallButtonText}>Cancel</Text>
+                          </Pressable>
+                        </>
+                      ) : (
+                        <>
+                          <Text style={[styles.loggedSetText, isDark && styles.textLight]}>
+                            Set {s.set_index}: {s.weight_kg == null ? '—' : toDisplayWeight(Number(s.weight_kg)).toFixed(1).replace(/\.0$/, '')} {units} × {s.reps}
+                          </Text>
+                          <Pressable style={[styles.smallButton, styles.smallButtonSecondary]} onPress={() => onStartEdit(s)}>
+                            <Text style={styles.smallButtonText}>Edit</Text>
+                          </Pressable>
+                          <Pressable style={[styles.smallButton, styles.smallButtonDanger]} onPress={() => onDeleteLoggedSet(s)}>
+                            <Text style={styles.smallButtonText}>Delete</Text>
+                          </Pressable>
+                        </>
+                      )}
+                    </View>
+                  );
+                })}
               </View>
             ) : null}
 
@@ -310,7 +446,18 @@ const styles = StyleSheet.create({
   muted: { color: '#334155' },
   mutedDark: { color: '#94a3b8' },
   loggedSets: { marginTop: 10, marginBottom: 10 },
-  loggedSetText: { marginBottom: 2, color: '#0f172a' },
+  loggedSetRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 },
+  loggedSetText: { marginBottom: 0, color: '#0f172a' },
+  inlineInput: { minWidth: 80, paddingVertical: 6 },
+  smallButton: {
+    backgroundColor: '#111827',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  smallButtonSecondary: { backgroundColor: 'rgba(15, 23, 42, 0.12)' },
+  smallButtonDanger: { backgroundColor: '#b91c1c' },
+  smallButtonText: { color: 'white', fontWeight: '900' },
   row: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginTop: 10 },
   field: { flex: 1 },
   fieldLabel: { fontSize: 12, marginBottom: 4, color: '#475569' },
@@ -354,10 +501,23 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(15,23,42,0.12)',
     backgroundColor: 'rgba(15,23,42,0.03)',
     marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
   },
   bannerDark: {
     borderColor: 'rgba(255,255,255,0.12)',
     backgroundColor: 'rgba(255,255,255,0.06)',
   },
-  bannerText: { color: '#0f172a', fontWeight: '700' },
+  bannerText: { color: '#0f172a', fontWeight: '700', flex: 1 },
+  undoButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(15,23,42,0.18)',
+  },
+  undoButtonDark: { borderColor: 'rgba(255,255,255,0.18)' },
+  undoText: { fontWeight: '900', color: '#0f172a' },
 });
