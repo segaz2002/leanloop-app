@@ -95,6 +95,11 @@ export default function WorkoutScreen() {
   };
 
   const onFinish = async () => {
+    if (sets.length === 0) {
+      Alert.alert('Nothing logged yet', 'Log at least one set before finishing.');
+      return;
+    }
+
     try {
       await completeWorkout(workoutId);
       Alert.alert('Workout complete', 'Nice work.', [{ text: 'OK', onPress: () => router.back() }]);

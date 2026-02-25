@@ -7,7 +7,10 @@ create table if not exists public.workouts (
   user_id uuid not null references auth.users(id) on delete cascade,
   day_code text not null check (day_code in ('A','B','C')),
   started_at timestamptz not null default now(),
-  completed_at timestamptz null
+  completed_at timestamptz null,
+  status text not null default 'in_progress',
+  abandoned_at timestamptz null,
+  constraint workouts_status_check check (status in ('in_progress','completed','abandoned'))
 );
 
 -- Exercises for a workout (store names directly to avoid seed dependencies)

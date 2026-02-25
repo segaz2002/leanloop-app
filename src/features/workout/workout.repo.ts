@@ -1,11 +1,15 @@
 import { supabase } from '@/src/lib/supabase';
 import { PROGRAM, type DayCode } from '@/src/features/plan/program';
 
+export type WorkoutStatus = 'in_progress' | 'completed' | 'abandoned';
+
 export type Workout = {
   id: string;
   day_code: DayCode;
   started_at: string;
   completed_at: string | null;
+  status: WorkoutStatus;
+  abandoned_at: string | null;
 };
 
 export type WorkoutExercise = {
@@ -35,8 +39,8 @@ export async function startWorkout(day: DayCode) {
 
   const wIns = await supabase
     .from('workouts')
-    .insert({ user_id: userId, day_code: day })
-    .select('id, day_code, started_at, completed_at')
+    .insert({ user_id: userId, day_code: day, status: 'in_progress' })
+    .select('id, day_code, started_at, completed_at, status, abandoned_at')
     .single();
 
   if (wIns.error) throw wIns.error;
@@ -61,7 +65,7 @@ export async function startWorkout(day: DayCode) {
 export async function fetchWorkout(workoutId: string) {
   const w = await supabase
     .from('workouts')
-    .select('id, day_code, started_at, completed_at')
+    .select('id, day_code, started_at, completed_at, status, abandoned_at')
     .eq('id', workoutId)
     .single();
   if (w.error) throw w.error;
@@ -111,11 +115,43 @@ export async function addSet(args: { workoutExerciseId: string; setIndex: number
 export async function completeWorkout(workoutId: string) {
   const res = await supabase
     .from('workouts')
-    .update({ completed_at: new Date().toISOString() })
+    .update({ completed_at: new Date().toISOString(), status: 'completed' })
     .eq('id', workoutId)
     .select('id')
     .single();
   if (res.error) throw res.error;
+}
+
+export async function abandonWorkout(workoutId: string) {
+  const res = await supabase
+    .from('workouts')
+    .update({ status: 'abandoned', abandoned_at: new Date().toISOString() })
+    .eq('id', workoutId)
+    .select('id')
+    .single();
+  if (res.error) throw res.error;
+}
+
+export async function fetchActiveWorkout() {
+  const res = await supabase
+    .from('workouts')
+    .select('id, day_code, started_at, completed_at, status, abandoned_at')
+    .eq('status', 'in_progress')
+    .order('started_at', { ascending: false })
+    .limit(1);
+  if (res.error) throw res.error;
+  return (res.data?.[0] as Workout) ?? null;
+}
+
+export async function fetchLastCompletedWorkout() {
+  const res = await supabase
+    .from('workouts')
+    .select('id, day_code, started_at, completed_at, status, abandoned_at')
+    .eq('status', 'completed')
+    .order('completed_at', { ascending: false })
+    .limit(1);
+  if (res.error) throw res.error;
+  return (res.data?.[0] as Workout) ?? null;
 }
 
 export async function fetchLastPerformance(exerciseName: string) {
