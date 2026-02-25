@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -29,6 +29,8 @@ export default function WorkoutScreen() {
   const [lastPerf, setLastPerf] = useState<Record<string, string>>({});
 
   const [restSeconds, setRestSeconds] = useState<number>(0);
+  const [banner, setBanner] = useState<string | null>(null);
+  const [finishing, setFinishing] = useState(false);
 
   const setsByExercise = useMemo(() => {
     const map: Record<string, WorkoutSet[]> = {};
@@ -41,6 +43,7 @@ export default function WorkoutScreen() {
   const refresh = async () => {
     setLoading(true);
     try {
+      setBanner(null);
       const data = await fetchWorkout(workoutId);
       setDayCode(data.workout.day_code);
       setExercises(data.exercises);
@@ -60,7 +63,9 @@ export default function WorkoutScreen() {
       );
       setLastPerf(perf);
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to load workout');
+      const msg = e?.message ?? 'Failed to load workout';
+      setBanner(msg);
+      if (Platform.OS !== 'web') Alert.alert('Error', msg);
     } finally {
       setLoading(false);
     }
@@ -95,6 +100,7 @@ export default function WorkoutScreen() {
     const existing = setsByExercise[ex.id]?.length ?? 0;
 
     try {
+      setBanner(null);
       const weightKg = weightInput === null ? null : Number(toKg(weightInput).toFixed(3));
       const inserted = await addSet({
         workoutExerciseId: ex.id,
@@ -116,21 +122,39 @@ export default function WorkoutScreen() {
       // Auto-start rest timer.
       setRestSeconds(REST_SECONDS_DEFAULT);
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to add set');
+      const msg = e?.message ?? 'Failed to add set';
+      setBanner(msg);
+      if (Platform.OS !== 'web') Alert.alert('Error', msg);
     }
   };
 
   const onFinish = async () => {
+    if (finishing) return;
+
     if (sets.length === 0) {
-      Alert.alert('Nothing logged yet', 'Log at least one set before finishing.');
+      const msg = 'Log at least one set before finishing.';
+      setBanner(msg);
+      if (Platform.OS !== 'web') Alert.alert('Nothing logged yet', msg);
       return;
     }
 
+    setFinishing(true);
     try {
+      setBanner(null);
       await completeWorkout(workoutId);
-      Alert.alert('Workout complete', 'Nice work.', [{ text: 'OK', onPress: () => router.back() }]);
+      setBanner('Workout complete.');
+
+      if (Platform.OS !== 'web') {
+        Alert.alert('Workout complete', 'Nice work.', [{ text: 'OK', onPress: () => router.replace('/') }]);
+      } else {
+        router.replace('/');
+      }
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to complete workout');
+      const msg = e?.message ?? 'Failed to complete workout';
+      setBanner(msg);
+      if (Platform.OS !== 'web') Alert.alert('Error', msg);
+    } finally {
+      setFinishing(false);
     }
   };
 
@@ -178,6 +202,12 @@ export default function WorkoutScreen() {
         }}
       />
       <Text style={[styles.title, isDark && styles.titleDark]}>Workout {dayCode}</Text>
+
+      {banner ? (
+        <View style={[styles.banner, isDark && styles.bannerDark]}>
+          <Text style={[styles.bannerText, isDark && styles.textLight]}>{banner}</Text>
+        </View>
+      ) : null}
 
       {exercises.map((ex) => {
         const logged = setsByExercise[ex.id] ?? [];
@@ -248,8 +278,8 @@ export default function WorkoutScreen() {
         );
       })}
 
-      <Pressable style={styles.finishButton} onPress={onFinish}>
-        <Text style={styles.finishButtonText}>Finish workout</Text>
+      <Pressable style={[styles.finishButton, finishing && styles.buttonDisabled]} onPress={onFinish} disabled={finishing}>
+        <Text style={styles.finishButtonText}>{finishing ? 'Finishing…' : 'Finish workout'}</Text>
       </Pressable>
     </ScrollView>
   );
@@ -313,4 +343,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   finishButtonText: { color: 'white', fontWeight: '900' },
+  buttonDisabled: { opacity: 0.65 },
+  banner: {
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(15,23,42,0.12)',
+    backgroundColor: 'rgba(15,23,42,0.03)',
+    marginBottom: 12,
+  },
+  bannerDark: {
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  bannerText: { color: '#0f172a', fontWeight: '700' },
 });
