@@ -252,7 +252,12 @@ export default function WorkoutScreen() {
   const isDark = scheme === 'dark';
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, isDark && styles.containerDark]}>
+    <ScrollView
+      style={[styles.scroll, isDark && styles.scrollDark]}
+      contentContainerStyle={[styles.container, isDark && styles.containerDark]}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+    >
       <Stack.Screen
         options={{
           title: `Workout ${dayCode}`,
@@ -425,7 +430,9 @@ export default function WorkoutScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: '#ffffff' },
+  scroll: { flex: 1, backgroundColor: '#ffffff' },
+  scrollDark: { backgroundColor: '#020617' },
+  container: { padding: 20, paddingBottom: 60, backgroundColor: '#ffffff', flexGrow: 1 },
   containerDark: { backgroundColor: '#020617' },
   title: { fontSize: 22, fontWeight: '800', marginBottom: 12, color: '#0f172a' },
   titleDark: { color: '#e5e7eb' },
