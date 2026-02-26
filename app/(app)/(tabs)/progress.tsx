@@ -8,6 +8,7 @@ import { Screen } from '@/src/ui/Screen';
 import { Card } from '@/src/ui/Card';
 import { Button } from '@/src/ui/Button';
 import { Input } from '@/src/ui/Input';
+import { Sparkline } from '@/src/ui/Sparkline';
 import { H1, Body, Label } from '@/src/ui/Typography';
 import { useAppTheme } from '@/src/theme/useAppTheme';
 import { fetchWeeklyStats, todayISO } from '@/src/features/progress/progress.repo';
@@ -185,7 +186,7 @@ export default function ProgressScreen() {
   const recommendations = useMemo(() => {
     if (!thisWeek || !goals) return null;
 
-    // Default goal: fat loss (until user chooses otherwise)
+    // Default goal: maintenance (per user preference; goal picker can come later)
     const currentSteps = goals.steps_goal;
     const currentProtein = goals.protein_goal_g;
 
@@ -204,25 +205,23 @@ export default function ProgressScreen() {
     const adherenceGood = workouts >= 3 || stepsHit >= 3;
     const adherenceLow = workouts <= 1 && stepsHit <= 1;
 
-    // Steps adjustment rules (deterministic, explainable)
-    if (deltaKg != null) {
-      if (deltaKg <= -0.3) {
-        reasons.push('Weight is trending down → keep steps the same.');
-      } else if (deltaKg > -0.3 && deltaKg <= 0.2) {
+    // Steps adjustment rules (maintenance): keep weight within a small deadband.
+    // Deadband: ±0.25% bodyweight/week (approx).
+    if (deltaKg != null && prevKg != null && prevKg > 0) {
+      const deadbandKg = prevKg * 0.0025;
+      if (Math.abs(deltaKg) <= deadbandKg) {
+        reasons.push('Weight is within the maintenance range → keep steps the same.');
+      } else if (deltaKg > deadbandKg) {
         if (adherenceGood) {
           nextSteps = Math.min(20000, currentSteps + 1000);
-          reasons.push('Weight is flat and adherence is good → +1000 steps/day.');
+          reasons.push('Weight is drifting up and adherence is good → +1000 steps/day.');
         } else {
-          reasons.push('Weight is flat → focus on consistency first (keep steps).');
+          reasons.push('Weight is drifting up → focus on consistency first (keep steps).');
         }
       } else {
-        // gaining
-        if (adherenceGood) {
-          nextSteps = Math.min(20000, currentSteps + 1500);
-          reasons.push('Weight is up and adherence is good → +1500 steps/day.');
-        } else {
-          reasons.push('Weight is up → focus on consistency first (keep steps).');
-        }
+        // drifting down
+        nextSteps = Math.max(3000, currentSteps - 500);
+        reasons.push('Weight is drifting down → -500 steps/day to maintain.');
       }
     } else {
       // No weight delta yet: adjust based on difficulty
@@ -234,19 +233,15 @@ export default function ProgressScreen() {
       }
     }
 
-    // Protein adjustment rules (consistency-first)
+    // Protein adjustment rules (maintenance): mostly keep stable; only adjust for consistency.
     if (proteinHit <= 1 && currentProtein > 80) {
       nextProtein = Math.max(80, currentProtein - 10);
       reasons.push('Protein goal was hard to hit → -10g to build consistency.');
-    } else if (proteinHit >= 4 && currentProtein < 160) {
-      // small nudge for satiety on fat loss, only if already consistent
-      nextProtein = Math.min(160, currentProtein + 5);
-      reasons.push('Protein consistency is strong → +5g for satiety/recovery.');
     } else {
       reasons.push('Keep protein goal the same.');
     }
 
-    // If adherence is low, don’t raise targets aggressively
+    // If adherence is low, don’t raise targets
     if (adherenceLow) {
       nextSteps = Math.min(nextSteps, currentSteps);
     }
@@ -504,12 +499,22 @@ export default function ProgressScreen() {
                 const avgPrev = avg(prev7);
                 const delta = avg7 != null && avgPrev != null ? avg7 - avgPrev : null;
 
+                const last14 = last.slice(-14).map((x) => (x.weight_kg == null ? null : Number(x.weight_kg)));
+
                 return (
                   <>
                     <Body muted>
                       Trend: {avg7 != null ? `${toDisplayWeight(avg7).toFixed(1).replace(/\.0$/, '')} ${units} (7-day avg)` : '—'}
                       {delta != null ? ` • ${delta < 0 ? '↓' : '↑'} ${Math.abs(toDisplayWeight(delta)).toFixed(1).replace(/\.0$/, '')} ${units} vs prior week` : ''}
                     </Body>
+
+                    <Sparkline
+                      values={last14}
+                      width={220}
+                      height={46}
+                      style={{ marginTop: 10, opacity: 0.95 }}
+                    />
+
                     <Body muted style={{ marginTop: 8 }}>
                       Last {Math.min(weightHistory.length, 7)} entries: {weightHistory
                         .slice(-7)

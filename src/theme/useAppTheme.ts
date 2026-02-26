@@ -31,11 +31,11 @@ export function useAppTheme() {
 
     return {
       mode,
-      bgPrimary: '#F8F9FA',
+      bgPrimary: '#F6F7F9',
       bgSecondary: '#FFFFFF',
       surfaceCard: '#FFFFFF',
       surfaceElevated: '#FFFFFF',
-      border: 'rgba(15,23,42,0.10)',
+      border: 'rgba(15,23,42,0.08)',
       text: '#0f172a',
       textSecondary: '#334155',
       muted: '#64748b',
