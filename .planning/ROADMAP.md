@@ -18,7 +18,7 @@ Ship a beginner-friendly lifting + fat-loss loop app with subscription, then ite
 |---|---|
 | 1 | ✅ Done (Auth + navigation) |
 | 2 | ✅ Done (A/B/C plan + workout execution + logging) |
-| 3 | 🟡 In progress (habits logging + consistency scoreboard shipped; weekly check-in + adaptation next) |
+| 3 | 🟡 In progress (weight logging + weekly check-in shipped; weight trend + refined adjustments next) |
 | 4 | ⬜ Not started |
 | 5 | ⬜ Not started |
 
@@ -26,5 +26,6 @@ Ship a beginner-friendly lifting + fat-loss loop app with subscription, then ite
 
 - ✅ **v1.0 MVP**: Auth, workouts (A/B/C), logging UX, progress scoreboard, habits (protein/steps)
 - ✅ **v1.1**: QA/polish (progress clarity, scroll/refresh, rest timer persistence, unit toggle propagation)
-- 🔜 **v1.2 (next)**: Weekly check-in + weight trend + rules-based target adjustments (Phase 3 completion)
+- 🟡 **v1.2 (in progress)**: Weight logging + Weekly check-in + rules-based target suggestions + UI theme system refactor
+- 🔜 **v1.3 (next)**: Weight trend chart + stronger weekly adjustment rules + substitutions v1
 

@@ -21,8 +21,8 @@
 
 ### Macro-lite Fat Loss Loop (CUT)
 - [x] **CUT-01**: App sets a protein target and steps target.
-- [ ] **CUT-02**: Weekly check-in captures weight and adherence.
-- [ ] **CUT-03**: Weekly adjustment suggests next-week targets (rules-based v1).
+- [x] **CUT-02**: Weekly check-in captures weight and adherence.
+- [x] **CUT-03**: Weekly adjustment suggests next-week targets (rules-based v1).
 
 ### Progress (PRG)
 - [ ] **PRG-01**: Show weight trend over time.

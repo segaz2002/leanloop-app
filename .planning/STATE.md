@@ -14,7 +14,7 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Status: Active development
-Last activity: 2026-02-25 — Workout logging UX + Exercise detail + Progress scoreboard shipped.
+Last activity: 2026-02-26 — v1.1 shipped + v1.2 started (weight logging, weekly check-in, goal suggestions) + UI theme system refactor underway.
 
 ## Blockers
 
@@ -24,7 +24,14 @@ Last activity: 2026-02-25 — Workout logging UX + Exercise detail + Progress sc
 
 ## Next Up (After Today)
 
-- Weekly check-in flow (weight + adherence)
+Product (Phase 3 completion):
 - Weight trend chart (simple, honest)
-- Rules-based adjustments for next-week protein/steps
+- Refine weekly adjustment rules (use weight delta + adherence; deterministic and explainable)
+- Exercise substitutions (basic)
+
+Design system:
+- Finish migration of remaining screens to UI primitives (Typography/Input)
+- Remove legacy hard-coded colors + unify spacing/radius
+
+Business:
 - Subscription/paywall plan
