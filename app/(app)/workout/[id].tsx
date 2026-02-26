@@ -1,20 +1,19 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 
-import { Text, View } from '@/components/Themed';
-import { useColorScheme } from '@/components/useColorScheme';
 import { Screen } from '@/src/ui/Screen';
 import { Card } from '@/src/ui/Card';
 import { Button } from '@/src/ui/Button';
+import { Input } from '@/src/ui/Input';
+import { H1, H2, Body, Label } from '@/src/ui/Typography';
 import { useAppTheme } from '@/src/theme/useAppTheme';
 
 import { getExerciseSlugFromName } from '@/src/features/exercise/catalog';
 import type { WorkoutExercise, WorkoutSet } from '@/src/features/workout/workout.repo';
 import { useUnits } from '@/src/features/settings/UnitsProvider';
-import { useAccent } from '@/src/features/settings/AccentProvider';
 import { addSet, completeWorkout, deleteSet, fetchLastPerformance, fetchWorkout, updateSet } from '@/src/features/workout/workout.repo';
 
 const REST_SECONDS_DEFAULT = 90;
@@ -28,8 +27,6 @@ export default function WorkoutScreen() {
 
   const t = useAppTheme();
   const { units, toDisplayWeight, toKg } = useUnits();
-  const { accentColor, accentTextOn } = useAccent();
-  const scheme = useColorScheme();
 
   const [loading, setLoading] = useState(true);
   const [dayCode, setDayCode] = useState<string>('');
@@ -89,7 +86,6 @@ export default function WorkoutScreen() {
   useFocusEffect(
     React.useCallback(() => {
       refresh();
-      // no cleanup
       return undefined;
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [workoutId]),
@@ -157,8 +153,8 @@ export default function WorkoutScreen() {
     };
 
     tick();
-    const t = setInterval(tick, 250);
-    return () => clearInterval(t);
+    const timer = setInterval(tick, 250);
+    return () => clearInterval(timer);
   }, [restEndsAt]);
 
   const onAddSet = async (ex: WorkoutExercise, draft: SetDraft) => {
@@ -190,10 +186,7 @@ export default function WorkoutScreen() {
       // Prefill next set with last values (beginner-friendly).
       setDrafts((prev) => ({
         ...prev,
-        [ex.id]: {
-          weightKg: draft.weightKg,
-          reps: draft.reps,
-        },
+        [ex.id]: { weightKg: draft.weightKg, reps: draft.reps },
       }));
 
       // Auto-start rest timer (persisted + robust across background/resume).
@@ -206,9 +199,7 @@ export default function WorkoutScreen() {
   };
 
   const clearUndoLater = () => {
-    setTimeout(() => {
-      setUndo(null);
-    }, 6000);
+    setTimeout(() => setUndo(null), 6000);
   };
 
   const onDeleteLoggedSet = async (s: WorkoutSet) => {
@@ -313,16 +304,24 @@ export default function WorkoutScreen() {
     }
   };
 
+  const miniButtonStyle = { paddingVertical: 8, paddingHorizontal: 10, borderRadius: t.radius.md };
+  const headerPillStyle = {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: t.radius.md,
+    borderWidth: 1,
+    borderColor: t.colors.border,
+    backgroundColor: t.colors.surfaceElevated,
+  };
+
   if (loading) {
     return (
       <Screen scroll={false}>
-        <Text style={[styles.title, { color: t.colors.text }]}>Workout</Text>
-        <Text style={{ color: t.colors.muted }}>Loading…</Text>
+        <H1>Workout</H1>
+        <Body muted>Loading…</Body>
       </Screen>
     );
   }
-
-  const isDark = scheme === 'dark';
 
   return (
     <Screen>
@@ -331,39 +330,34 @@ export default function WorkoutScreen() {
           title: `Workout ${dayCode}`,
           headerLeft: () => (
             <Pressable onPress={() => router.back()} style={{ paddingHorizontal: 12, paddingVertical: 8 }}>
-              <Text style={{ fontWeight: '800', color: isDark ? '#e5e7eb' : '#0f172a' }}>Back</Text>
+              <Body style={{ fontWeight: '800' }}>Back</Body>
             </Pressable>
           ),
           headerRight: () =>
             restSeconds > 0 ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 10 }}>
-                <Text style={{ fontWeight: '900', color: isDark ? '#e5e7eb' : '#0f172a' }}>
+                <Body style={{ fontWeight: '900' }}>
                   Rest {Math.floor(restSeconds / 60)}:{String(restSeconds % 60).padStart(2, '0')}
-                </Text>
-                <Pressable
-                  onPress={() => setRestEndsAt((t) => (t ? t + 15_000 : Date.now() + 15_000))}
-                  style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }}
-                >
-                  <Text style={{ fontWeight: '800', color: isDark ? '#e5e7eb' : '#0f172a' }}>+15</Text>
+                </Body>
+                <Pressable onPress={() => setRestEndsAt((x) => (x ? x + 15_000 : Date.now() + 15_000))} style={headerPillStyle}>
+                  <Body style={{ fontWeight: '800' }}>+15</Body>
                 </Pressable>
-                <Pressable
-                  onPress={() => setRestEndsAt(null)}
-                  style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }}
-                >
-                  <Text style={{ fontWeight: '800', color: isDark ? '#e5e7eb' : '#0f172a' }}>Skip</Text>
+                <Pressable onPress={() => setRestEndsAt(null)} style={headerPillStyle}>
+                  <Body style={{ fontWeight: '800' }}>Skip</Body>
                 </Pressable>
               </View>
             ) : null,
         }}
       />
-      <Text style={[styles.title, { color: t.colors.text }]}>Workout {dayCode}</Text>
+
+      <H1>Workout {dayCode}</H1>
 
       {banner ? (
         <Card style={{ marginBottom: 12 }}>
-          <Text style={{ fontWeight: '700', color: t.colors.text }}>{banner}</Text>
+          <Body style={{ fontWeight: '800' }}>{banner}</Body>
           {undo ? (
             <Pressable onPress={onUndo} style={{ marginTop: 8, alignSelf: 'flex-start' }}>
-              <Text style={{ fontWeight: '900', color: t.colors.accent }}>Undo</Text>
+              <Body style={{ fontWeight: '900', color: t.colors.accent }}>Undo</Body>
             </Pressable>
           ) : null}
         </Card>
@@ -377,9 +371,7 @@ export default function WorkoutScreen() {
           drafts[ex.id] ??
           ({
             weightKg:
-              last?.weight_kg == null
-                ? ''
-                : toDisplayWeight(Number(last.weight_kg)).toFixed(1).replace(/\.0$/, ''),
+              last?.weight_kg == null ? '' : toDisplayWeight(Number(last.weight_kg)).toFixed(1).replace(/\.0$/, ''),
             reps: last?.reps == null ? '' : String(last.reps),
           } satisfies SetDraft);
 
@@ -388,15 +380,18 @@ export default function WorkoutScreen() {
         return (
           <Card key={ex.id} style={{ marginBottom: 12 }}>
             <Pressable onPress={() => router.push(`/exercise/${getExerciseSlugFromName(ex.exercise_name)}`)}>
-              <Text style={[styles.exerciseTitle, isDark && styles.textLight]}>
+              <H2 style={{ marginBottom: 2 }}>
                 {ex.position}. {ex.exercise_name}
-              </Text>
+              </H2>
             </Pressable>
-            <Text style={[styles.muted, isDark && styles.mutedDark]}>
+
+            <Body muted>
               {ex.sets_planned} × {ex.rep_min}–{ex.rep_max}
-            </Text>
-            <Text style={[styles.muted, isDark && styles.mutedDark]}>Set {nextSet} of {ex.sets_planned}</Text>
-            {lastPerf[ex.id] ? <Text style={[styles.muted, isDark && styles.mutedDark]}>{lastPerf[ex.id]}</Text> : null}
+            </Body>
+            <Body muted>
+              Set {nextSet} of {ex.sets_planned}
+            </Body>
+            {lastPerf[ex.id] ? <Body muted>{lastPerf[ex.id]}</Body> : null}
 
             {logged.length ? (
               <View style={styles.loggedSets}>
@@ -406,50 +401,44 @@ export default function WorkoutScreen() {
                     <View key={s.id} style={styles.loggedSetRow}>
                       {isEditing ? (
                         <>
-                          <Text style={[styles.loggedSetText, isDark && styles.textLight]}>Set {s.set_index}:</Text>
-                          <TextInput
-                            style={[styles.input, scheme === 'dark' && styles.inputDark, styles.inlineInput]}
-                            placeholderTextColor={scheme === 'dark' ? '#94a3b8' : '#64748b'}
+                          <Body secondary style={{ fontWeight: '800' }}>
+                            Set {s.set_index}:
+                          </Body>
+                          <Input
+                            style={styles.inlineInput}
                             keyboardType="numeric"
                             value={editingDraft?.weight ?? ''}
-                            onChangeText={(t) => setEditingDraft((d) => ({ ...(d ?? { weight: '', reps: '' }), weight: t }))}
+                            onChangeText={(txt) => setEditingDraft((d) => ({ ...(d ?? { weight: '', reps: '' }), weight: txt }))}
                             placeholder="20"
                           />
-                          <Text style={[styles.loggedSetText, isDark && styles.textLight]}>{units} ×</Text>
-                          <TextInput
-                            style={[styles.input, scheme === 'dark' && styles.inputDark, styles.inlineInput]}
-                            placeholderTextColor={scheme === 'dark' ? '#94a3b8' : '#64748b'}
+                          <Body secondary>{units} ×</Body>
+                          <Input
+                            style={styles.inlineInput}
                             keyboardType="numeric"
                             value={editingDraft?.reps ?? ''}
-                            onChangeText={(t) => setEditingDraft((d) => ({ ...(d ?? { weight: '', reps: '' }), reps: t }))}
+                            onChangeText={(txt) => setEditingDraft((d) => ({ ...(d ?? { weight: '', reps: '' }), reps: txt }))}
                             placeholder="8"
                           />
-                          <Text style={[styles.loggedSetText, isDark && styles.textLight]}>reps</Text>
+                          <Body secondary>reps</Body>
 
-                          <Pressable style={styles.smallButton} onPress={() => onSaveEdit(s)}>
-                            <Text style={styles.smallButtonText}>Save</Text>
-                          </Pressable>
-                          <Pressable
-                            style={[styles.smallButton, styles.smallButtonSecondary]}
+                          <Button title="Save" variant="secondary" onPress={() => onSaveEdit(s)} style={miniButtonStyle} />
+                          <Button
+                            title="Cancel"
+                            variant="ghost"
                             onPress={() => {
                               setEditingSetId(null);
                               setEditingDraft(null);
                             }}
-                          >
-                            <Text style={styles.smallButtonText}>Cancel</Text>
-                          </Pressable>
+                            style={miniButtonStyle}
+                          />
                         </>
                       ) : (
                         <>
-                          <Text style={[styles.loggedSetText, isDark && styles.textLight]}>
+                          <Body secondary style={{ fontWeight: '700' }}>
                             Set {s.set_index}: {s.weight_kg == null ? '—' : toDisplayWeight(Number(s.weight_kg)).toFixed(1).replace(/\.0$/, '')} {units} × {s.reps}
-                          </Text>
-                          <Pressable style={[styles.smallButton, styles.smallButtonSecondary]} onPress={() => onStartEdit(s)}>
-                            <Text style={styles.smallButtonText}>Edit</Text>
-                          </Pressable>
-                          <Pressable style={[styles.smallButton, styles.smallButtonDanger]} onPress={() => onDeleteLoggedSet(s)}>
-                            <Text style={styles.smallButtonText}>Delete</Text>
-                          </Pressable>
+                          </Body>
+                          <Button title="Edit" variant="secondary" onPress={() => onStartEdit(s)} style={miniButtonStyle} />
+                          <Button title="Delete" variant="secondary" onPress={() => onDeleteLoggedSet(s)} style={miniButtonStyle} />
                         </>
                       )}
                     </View>
@@ -460,24 +449,20 @@ export default function WorkoutScreen() {
 
             <View style={styles.row}>
               <View style={styles.field}>
-                <Text style={[styles.fieldLabel, isDark && styles.fieldLabelDark]}>Weight ({units})</Text>
-                <TextInput
-                  style={[styles.input, scheme === 'dark' && styles.inputDark]}
-                  placeholderTextColor={scheme === 'dark' ? '#94a3b8' : '#64748b'}
-                  keyboardType="numeric"
+                <Label>Weight ({units})</Label>
+                <Input
                   value={derivedDraft.weightKg}
-                  onChangeText={(t) => setDrafts((p) => ({ ...p, [ex.id]: { ...derivedDraft, weightKg: t } }))}
+                  onChangeText={(txt) => setDrafts((p) => ({ ...p, [ex.id]: { ...derivedDraft, weightKg: txt } }))}
+                  keyboardType="numeric"
                   placeholder="20"
                 />
               </View>
               <View style={styles.field}>
-                <Text style={[styles.fieldLabel, isDark && styles.fieldLabelDark]}>Reps</Text>
-                <TextInput
-                  style={[styles.input, scheme === 'dark' && styles.inputDark]}
-                  placeholderTextColor={scheme === 'dark' ? '#94a3b8' : '#64748b'}
-                  keyboardType="numeric"
+                <Label>Reps</Label>
+                <Input
                   value={derivedDraft.reps}
-                  onChangeText={(t) => setDrafts((p) => ({ ...p, [ex.id]: { ...derivedDraft, reps: t } }))}
+                  onChangeText={(txt) => setDrafts((p) => ({ ...p, [ex.id]: { ...derivedDraft, reps: txt } }))}
+                  keyboardType="numeric"
                   placeholder="8"
                 />
               </View>
@@ -499,101 +484,10 @@ export default function WorkoutScreen() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: '#ffffff' },
-  scrollDark: { backgroundColor: '#020617' },
-  container: { padding: 20, paddingBottom: 60, backgroundColor: '#ffffff', flexGrow: 1 },
-  containerDark: { backgroundColor: '#020617' },
-  title: { fontSize: 22, fontWeight: '800', marginBottom: 12, color: '#0f172a' },
-  titleDark: { color: '#e5e7eb' },
-  card: {
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.08)',
-    backgroundColor: '#ffffff',
-    marginBottom: 12,
-  },
-  cardDark: {
-    borderColor: 'rgba(255,255,255,0.10)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-  },
-  exerciseTitle: { fontWeight: '800', marginBottom: 6, color: '#0f172a' },
-  textLight: { color: '#e5e7eb' },
-  muted: { color: '#334155' },
-  mutedDark: { color: '#94a3b8' },
   loggedSets: { marginTop: 10, marginBottom: 10 },
-  loggedSetRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 },
-  loggedSetText: { marginBottom: 0, color: '#0f172a' },
-  inlineInput: { minWidth: 80, paddingVertical: 6 },
-  smallButton: {
-    backgroundColor: '#111827',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  smallButtonSecondary: { backgroundColor: 'rgba(15, 23, 42, 0.12)' },
-  smallButtonDanger: { backgroundColor: '#b91c1c' },
-  smallButtonText: { color: 'white', fontWeight: '900' },
+  loggedSetRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  inlineInput: { minWidth: 80, paddingVertical: 8, paddingHorizontal: 10 },
+
   row: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginTop: 10 },
   field: { flex: 1 },
-  fieldLabel: { fontSize: 12, marginBottom: 4, color: '#475569' },
-  fieldLabelDark: { color: '#94a3b8' },
-  input: {
-    borderWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.18)',
-    backgroundColor: '#ffffff',
-    color: '#0f172a',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-  },
-  inputDark: {
-    borderColor: 'rgba(255,255,255,0.18)',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    color: '#e5e7eb',
-  },
-  completeButton: {
-    marginTop: 10,
-    backgroundColor: '#111827',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  completeButtonText: { color: 'white', fontWeight: '900' },
-  finishButton: {
-    marginTop: 8,
-    backgroundColor: '#0f766e',
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  finishButtonText: { color: 'white', fontWeight: '900' },
-  buttonDisabled: { opacity: 0.65 },
-  banner: {
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(15,23,42,0.12)',
-    backgroundColor: 'rgba(15,23,42,0.03)',
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  bannerDark: {
-    borderColor: 'rgba(255,255,255,0.12)',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  bannerText: { color: '#0f172a', fontWeight: '700', flex: 1 },
-  undoButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(15,23,42,0.18)',
-  },
-  undoButtonDark: { borderColor: 'rgba(255,255,255,0.18)' },
-  undoText: { fontWeight: '900', color: '#0f172a' },
 });
