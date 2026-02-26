@@ -6,6 +6,10 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { Text, View } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
+import { Screen } from '@/src/ui/Screen';
+import { Card } from '@/src/ui/Card';
+import { Button } from '@/src/ui/Button';
+import { useAppTheme } from '@/src/theme/useAppTheme';
 
 import { getExerciseSlugFromName } from '@/src/features/exercise/catalog';
 import type { WorkoutExercise, WorkoutSet } from '@/src/features/workout/workout.repo';
@@ -22,6 +26,7 @@ export default function WorkoutScreen() {
   const workoutId = String(id);
   const router = useRouter();
 
+  const t = useAppTheme();
   const { units, toDisplayWeight, toKg } = useUnits();
   const { accentColor, accentTextOn } = useAccent();
   const scheme = useColorScheme();
@@ -310,22 +315,17 @@ export default function WorkoutScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Workout</Text>
-        <Text>Loading…</Text>
-      </View>
+      <Screen scroll={false}>
+        <Text style={[styles.title, { color: t.colors.text }]}>Workout</Text>
+        <Text style={{ color: t.colors.muted }}>Loading…</Text>
+      </Screen>
     );
   }
 
   const isDark = scheme === 'dark';
 
   return (
-    <ScrollView
-      style={[styles.scroll, isDark && styles.scrollDark]}
-      contentContainerStyle={[styles.container, isDark && styles.containerDark]}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-    >
+    <Screen>
       <Stack.Screen
         options={{
           title: `Workout ${dayCode}`,
@@ -356,17 +356,17 @@ export default function WorkoutScreen() {
             ) : null,
         }}
       />
-      <Text style={[styles.title, isDark && styles.titleDark]}>Workout {dayCode}</Text>
+      <Text style={[styles.title, { color: t.colors.text }]}>Workout {dayCode}</Text>
 
       {banner ? (
-        <View style={[styles.banner, isDark && styles.bannerDark]}>
-          <Text style={[styles.bannerText, isDark && styles.textLight]}>{banner}</Text>
+        <Card style={{ marginBottom: 12 }}>
+          <Text style={{ fontWeight: '700', color: t.colors.text }}>{banner}</Text>
           {undo ? (
-            <Pressable onPress={onUndo} style={[styles.undoButton, isDark && styles.undoButtonDark]}>
-              <Text style={[styles.undoText, isDark && styles.textLight]}>Undo</Text>
+            <Pressable onPress={onUndo} style={{ marginTop: 8, alignSelf: 'flex-start' }}>
+              <Text style={{ fontWeight: '900', color: t.colors.accent }}>Undo</Text>
             </Pressable>
           ) : null}
-        </View>
+        </Card>
       ) : null}
 
       {exercises.map((ex) => {
@@ -386,7 +386,7 @@ export default function WorkoutScreen() {
         const nextSet = (logged.length ?? 0) + 1;
 
         return (
-          <View key={ex.id} style={[styles.card, isDark && styles.cardDark]}>
+          <Card key={ex.id} style={{ marginBottom: 12 }}>
             <Pressable onPress={() => router.push(`/exercise/${getExerciseSlugFromName(ex.exercise_name)}`)}>
               <Text style={[styles.exerciseTitle, isDark && styles.textLight]}>
                 {ex.position}. {ex.exercise_name}
@@ -483,21 +483,18 @@ export default function WorkoutScreen() {
               </View>
             </View>
 
-            <Pressable style={[styles.completeButton, { backgroundColor: accentColor }]} onPress={() => onAddSet(ex, derivedDraft)}>
-              <Text style={[styles.completeButtonText, { color: accentTextOn }]}>Complete set</Text>
-            </Pressable>
-          </View>
+            <Button title="Complete set" onPress={() => onAddSet(ex, derivedDraft)} style={{ marginTop: 10 }} />
+          </Card>
         );
       })}
 
-      <Pressable
-        style={[styles.finishButton, { backgroundColor: accentColor }, finishing && styles.buttonDisabled]}
+      <Button
+        title={finishing ? 'Finishing…' : 'Finish workout'}
         onPress={onFinish}
         disabled={finishing}
-      >
-        <Text style={[styles.finishButtonText, { color: accentTextOn }]}>{finishing ? 'Finishing…' : 'Finish workout'}</Text>
-      </Pressable>
-    </ScrollView>
+        style={{ marginTop: 8, marginBottom: 24 }}
+      />
+    </Screen>
   );
 }
 
