@@ -185,43 +185,73 @@ export default function ProgressScreen() {
   const recommendations = useMemo(() => {
     if (!thisWeek || !goals) return null;
 
+    // Default goal: fat loss (until user chooses otherwise)
     const currentSteps = goals.steps_goal;
     const currentProtein = goals.protein_goal_g;
 
-    // Weight delta (if both weeks exist)
     const currKg = weeklyCheckin?.weight_kg ?? null;
     const prevKg = prevWeeklyCheckin?.weight_kg ?? null;
     const deltaKg = currKg != null && prevKg != null ? currKg - prevKg : null;
+
+    const stepsHit = thisWeek.stepsDaysHit;
+    const proteinHit = thisWeek.proteinDaysHit;
+    const workouts = thisWeek.workoutsCompleted;
 
     let nextSteps = currentSteps;
     let nextProtein = currentProtein;
     const reasons: string[] = [];
 
-    // Steps rule: if you're consistently hitting steps but weight isn't trending down, nudge steps up.
-    if (thisWeek.stepsDaysHit >= 3 && deltaKg != null && deltaKg > -0.2) {
-      nextSteps = Math.min(20000, currentSteps + 1000);
-      reasons.push('You hit your steps goal most days and weight is flat/up → +1000 steps/day.');
-    } else if (thisWeek.stepsDaysHit <= 1 && currentSteps > 3000) {
-      nextSteps = Math.max(3000, currentSteps - 500);
-      reasons.push('Steps goal was hard to hit → make it more doable (-500 steps/day).');
+    const adherenceGood = workouts >= 3 || stepsHit >= 3;
+    const adherenceLow = workouts <= 1 && stepsHit <= 1;
+
+    // Steps adjustment rules (deterministic, explainable)
+    if (deltaKg != null) {
+      if (deltaKg <= -0.3) {
+        reasons.push('Weight is trending down → keep steps the same.');
+      } else if (deltaKg > -0.3 && deltaKg <= 0.2) {
+        if (adherenceGood) {
+          nextSteps = Math.min(20000, currentSteps + 1000);
+          reasons.push('Weight is flat and adherence is good → +1000 steps/day.');
+        } else {
+          reasons.push('Weight is flat → focus on consistency first (keep steps).');
+        }
+      } else {
+        // gaining
+        if (adherenceGood) {
+          nextSteps = Math.min(20000, currentSteps + 1500);
+          reasons.push('Weight is up and adherence is good → +1500 steps/day.');
+        } else {
+          reasons.push('Weight is up → focus on consistency first (keep steps).');
+        }
+      }
     } else {
-      reasons.push('Keep steps goal the same.');
+      // No weight delta yet: adjust based on difficulty
+      if (stepsHit <= 1 && currentSteps > 3000) {
+        nextSteps = Math.max(3000, currentSteps - 500);
+        reasons.push('Steps goal was hard to hit → -500 steps/day to make it doable.');
+      } else {
+        reasons.push('Keep steps goal the same for now.');
+      }
     }
 
-    // Protein rule: if protein goal is rarely hit, reduce slightly to build consistency first.
-    if (thisWeek.proteinDaysHit <= 1 && currentProtein > 80) {
+    // Protein adjustment rules (consistency-first)
+    if (proteinHit <= 1 && currentProtein > 80) {
       nextProtein = Math.max(80, currentProtein - 10);
-      reasons.push('Protein goal felt tough → -10g to build consistency.');
+      reasons.push('Protein goal was hard to hit → -10g to build consistency.');
+    } else if (proteinHit >= 4 && currentProtein < 160) {
+      // small nudge for satiety on fat loss, only if already consistent
+      nextProtein = Math.min(160, currentProtein + 5);
+      reasons.push('Protein consistency is strong → +5g for satiety/recovery.');
     } else {
       reasons.push('Keep protein goal the same.');
     }
 
-    return {
-      nextSteps,
-      nextProtein,
-      deltaKg,
-      reasons,
-    };
+    // If adherence is low, don’t raise targets aggressively
+    if (adherenceLow) {
+      nextSteps = Math.min(nextSteps, currentSteps);
+    }
+
+    return { nextSteps, nextProtein, deltaKg, reasons };
   }, [thisWeek, goals, weeklyCheckin?.weight_kg, prevWeeklyCheckin?.weight_kg]);
 
   return (
