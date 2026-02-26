@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { Text, View } from '@/components/Themed';
@@ -73,7 +73,12 @@ export default function ProgressScreen() {
   };
 
   return (
-    <View style={[styles.container, isDark && styles.containerDark]}>
+    <ScrollView
+      style={[styles.scroll, isDark && styles.scrollDark]}
+      contentContainerStyle={[styles.container, isDark && styles.containerDark]}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+    >
       <Text style={[styles.title, isDark && styles.textLight]}>Progress</Text>
       <Text style={[styles.subtitle, isDark && styles.mutedDark]}>Consistency scoreboard (last 4 weeks)</Text>
 
@@ -182,12 +187,14 @@ export default function ProgressScreen() {
           </View>
         </>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#ffffff' },
+  scroll: { flex: 1, backgroundColor: '#ffffff' },
+  scrollDark: { backgroundColor: '#020617' },
+  container: { padding: 20, paddingBottom: 60, backgroundColor: '#ffffff', flexGrow: 1 },
   containerDark: { backgroundColor: '#020617' },
   title: { fontSize: 22, fontWeight: '900', marginBottom: 6, color: '#0f172a' },
   textLight: { color: '#e5e7eb' },
