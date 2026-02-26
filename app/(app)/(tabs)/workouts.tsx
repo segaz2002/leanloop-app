@@ -3,10 +3,15 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
+import { useColorScheme } from '@/components/useColorScheme';
+import { useAccent } from '@/src/features/settings/AccentProvider';
 import { abandonWorkout, fetchActiveWorkout, startWorkout, type Workout } from '@/src/features/workout/workout.repo';
 
 export default function WorkoutsScreen() {
   const router = useRouter();
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
+  const { accentColor, accentTextOn } = useAccent();
   const [starting, setStarting] = useState<null | 'A' | 'B' | 'C'>(null);
   const [active, setActive] = useState<Workout | null>(null);
 
@@ -71,25 +76,37 @@ export default function WorkoutsScreen() {
       <Text style={styles.subtitle}>Start a session.</Text>
 
       {active ? (
-        <View style={styles.card}>
+        <View style={[styles.card, isDark && styles.cardDark]}>
           <Text style={styles.cardTitle}>In progress</Text>
           <Text>Workout {active.day_code} is unfinished.</Text>
-          <Pressable style={styles.button} onPress={() => router.push(`/workout/${active.id}`)}>
-            <Text style={styles.buttonText}>Resume workout</Text>
+          <Pressable style={[styles.button, { backgroundColor: accentColor }]} onPress={() => router.push(`/workout/${active.id}`)}>
+            <Text style={[styles.buttonText, { color: accentTextOn }]}>Resume workout</Text>
           </Pressable>
         </View>
       ) : null}
 
-      <View style={styles.card}>
+      <View style={[styles.card, isDark && styles.cardDark]}>
         <Text style={styles.cardTitle}>This week</Text>
-        <Pressable style={[styles.button, starting === 'A' && styles.buttonDisabled]} onPress={() => start('A')} disabled={starting !== null}>
-          <Text style={styles.buttonText}>Start Workout A</Text>
+        <Pressable
+          style={[styles.button, { backgroundColor: accentColor }, starting === 'A' && styles.buttonDisabled]}
+          onPress={() => start('A')}
+          disabled={starting !== null}
+        >
+          <Text style={[styles.buttonText, { color: accentTextOn }]}>Start Workout A</Text>
         </Pressable>
-        <Pressable style={[styles.button, starting === 'B' && styles.buttonDisabled]} onPress={() => start('B')} disabled={starting !== null}>
-          <Text style={styles.buttonText}>Start Workout B</Text>
+        <Pressable
+          style={[styles.button, { backgroundColor: accentColor }, starting === 'B' && styles.buttonDisabled]}
+          onPress={() => start('B')}
+          disabled={starting !== null}
+        >
+          <Text style={[styles.buttonText, { color: accentTextOn }]}>Start Workout B</Text>
         </Pressable>
-        <Pressable style={[styles.button, starting === 'C' && styles.buttonDisabled]} onPress={() => start('C')} disabled={starting !== null}>
-          <Text style={styles.buttonText}>Start Workout C</Text>
+        <Pressable
+          style={[styles.button, { backgroundColor: accentColor }, starting === 'C' && styles.buttonDisabled]}
+          onPress={() => start('C')}
+          disabled={starting !== null}
+        >
+          <Text style={[styles.buttonText, { color: accentTextOn }]}>Start Workout C</Text>
         </Pressable>
       </View>
 
@@ -107,7 +124,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.08)',
+    backgroundColor: '#ffffff',
     marginBottom: 12,
+  },
+  cardDark: {
+    borderColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
   },
   cardTitle: { fontWeight: '800', marginBottom: 10 },
   button: {
