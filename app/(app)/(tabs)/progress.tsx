@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { Text, View } from '@/components/Themed';
@@ -7,6 +7,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { Screen } from '@/src/ui/Screen';
 import { Card } from '@/src/ui/Card';
 import { Button } from '@/src/ui/Button';
+import { Input } from '@/src/ui/Input';
+import { H1, Body, Label } from '@/src/ui/Typography';
 import { useAppTheme } from '@/src/theme/useAppTheme';
 import { fetchWeeklyStats, todayISO } from '@/src/features/progress/progress.repo';
 import type { WeeklyStats } from '@/src/features/progress/progress.logic';
@@ -224,11 +226,11 @@ export default function ProgressScreen() {
 
   return (
     <Screen>
-      <Text style={[styles.title, isDark && styles.textLight]}>Progress</Text>
-      <Text style={[styles.subtitle, isDark && styles.mutedDark]}>Consistency scoreboard (last 4 weeks)</Text>
+      <H1>Progress</H1>
+      <Body muted>Consistency scoreboard (last 4 weeks)</Body>
 
       {loading ? (
-        <Text style={[styles.muted, isDark && styles.mutedDark]}>Loading…</Text>
+        <Body muted>Loading…</Body>
       ) : (
         <>
           {thisWeek ? (
@@ -313,14 +315,12 @@ export default function ProgressScreen() {
 
               <View style={styles.row}>
                 <View style={styles.field}>
-                  <Text style={[styles.label, isDark && styles.mutedDark]}>End-of-week weight ({units})</Text>
-                  <TextInput
+                  <Label>End-of-week weight ({units})</Label>
+                  <Input
                     value={checkinWeight}
                     onChangeText={setCheckinWeight}
                     keyboardType="numeric"
                     placeholder={units === 'lb' ? '180' : '80'}
-                    placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                    style={[styles.input, isDark && styles.inputDark]}
                   />
                 </View>
               </View>
@@ -330,13 +330,11 @@ export default function ProgressScreen() {
               </Text>
 
               <View style={styles.field}>
-                <Text style={[styles.label, isDark && styles.mutedDark]}>Note (optional)</Text>
-                <TextInput
+                <Label>Note (optional)</Label>
+                <Input
                   value={checkinNote}
                   onChangeText={setCheckinNote}
                   placeholder="How did it go this week?"
-                  placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                  style={[styles.input, isDark && styles.inputDark]}
                 />
               </View>
 
@@ -423,25 +421,21 @@ export default function ProgressScreen() {
             </Text>
             <View style={styles.row}>
               <View style={styles.field}>
-                <Text style={[styles.label, isDark && styles.mutedDark]}>Protein (g)</Text>
-                <TextInput
+                <Label>Protein (g)</Label>
+                <Input
                   value={protein}
                   onChangeText={setProtein}
                   keyboardType="numeric"
                   placeholder="120"
-                  placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                  style={[styles.input, isDark && styles.inputDark]}
                 />
               </View>
               <View style={styles.field}>
-                <Text style={[styles.label, isDark && styles.mutedDark]}>Steps</Text>
-                <TextInput
+                <Label>Steps</Label>
+                <Input
                   value={steps}
                   onChangeText={setSteps}
                   keyboardType="numeric"
                   placeholder="8000"
-                  placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                  style={[styles.input, isDark && styles.inputDark]}
                 />
               </View>
             </View>
@@ -455,14 +449,12 @@ export default function ProgressScreen() {
             </Text>
             <View style={styles.row}>
               <View style={styles.field}>
-                <Text style={[styles.label, isDark && styles.mutedDark]}>Body weight ({units})</Text>
-                <TextInput
+                <Label>Body weight ({units})</Label>
+                <Input
                   value={weight}
                   onChangeText={setWeight}
                   keyboardType="numeric"
                   placeholder={units === 'lb' ? '180' : '80'}
-                  placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                  style={[styles.input, isDark && styles.inputDark]}
                 />
               </View>
             </View>
@@ -536,29 +528,8 @@ const styles = StyleSheet.create({
   line: { marginTop: 6, color: '#0f172a' },
   row: { flexDirection: 'row', gap: 12 },
   field: { flex: 1 },
+  // label/input/button styles moved to shared UI primitives
   label: { fontSize: 12, marginBottom: 6, color: '#475569' },
-  input: {
-    borderWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.18)',
-    backgroundColor: '#ffffff',
-    color: '#0f172a',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-  },
-  inputDark: {
-    borderColor: 'rgba(255,255,255,0.18)',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    color: '#e5e7eb',
-  },
-  button: {
-    marginTop: 12,
-    backgroundColor: '#111827',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  buttonText: { color: 'white', fontWeight: '900' },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   badge: {
     paddingHorizontal: 10,

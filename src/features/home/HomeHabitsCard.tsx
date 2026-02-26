@@ -3,6 +3,9 @@ import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
+import { Input } from '@/src/ui/Input';
+import { Button } from '@/src/ui/Button';
+import { useAppTheme } from '@/src/theme/useAppTheme';
 import { fetchHabitsForDate, upsertHabitsForDate } from '@/src/features/habits/habits.repo';
 import { fetchMyProfile } from '@/src/features/profile/profile.repo';
 import { todayISO } from '@/src/features/progress/progress.repo';
@@ -12,8 +15,9 @@ import { useAccent } from '@/src/features/settings/AccentProvider';
 export function HomeHabitsCard() {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
+  const t = useAppTheme();
 
-  const { accentColor, accentTextOn } = useAccent();
+  useAccent();
 
   const [loading, setLoading] = useState(true);
   const [proteinGoal, setProteinGoal] = useState<number | null>(null);
@@ -148,35 +152,25 @@ export function HomeHabitsCard() {
           <View style={styles.row}>
             <View style={styles.field}>
               <Text style={[styles.label, isDark && styles.mutedDark]}>Protein (g)</Text>
-              <TextInput
+              <Input
                 value={protein}
                 onChangeText={setProtein}
                 keyboardType="numeric"
                 placeholder="120"
-                placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                style={[styles.input, isDark && styles.inputDark]}
               />
             </View>
             <View style={styles.field}>
               <Text style={[styles.label, isDark && styles.mutedDark]}>Steps</Text>
-              <TextInput
+              <Input
                 value={steps}
                 onChangeText={setSteps}
                 keyboardType="numeric"
                 placeholder="8000"
-                placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                style={[styles.input, isDark && styles.inputDark]}
               />
             </View>
           </View>
 
-          <Pressable
-            style={[styles.button, { backgroundColor: accentColor }, saving && styles.buttonDisabled]}
-            onPress={onSave}
-            disabled={saving}
-          >
-            <Text style={[styles.buttonText, { color: accentTextOn }]}>{saving ? 'Saving…' : 'Save'}</Text>
-          </Pressable>
+          <Button title={saving ? 'Saving…' : 'Save'} onPress={onSave} disabled={saving} style={{ marginTop: 12 }} />
         </>
       )}
     </View>
@@ -194,27 +188,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 12, marginTop: 10 },
   field: { flex: 1 },
   label: { fontSize: 12, marginBottom: 6, color: '#475569' },
-  input: {
-    borderWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.18)',
-    backgroundColor: '#ffffff',
-    color: '#0f172a',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-  },
-  inputDark: {
-    borderColor: 'rgba(255,255,255,0.18)',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    color: '#e5e7eb',
-  },
-  button: {
-    marginTop: 12,
-    backgroundColor: '#111827',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  buttonDisabled: { opacity: 0.65 },
-  buttonText: { color: 'white', fontWeight: '900' },
+  // input + button styles moved to shared UI primitives
 });
