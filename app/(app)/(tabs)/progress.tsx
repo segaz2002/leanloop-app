@@ -10,6 +10,7 @@ import { fetchHabitsForDate, upsertHabitsForDate, type HabitsDaily } from '@/src
 import { fetchWeightForDate, fetchWeightRange, upsertWeightForDate, type WeightEntry } from '@/src/features/weight/weight.repo';
 import { useUnits } from '@/src/features/settings/UnitsProvider';
 import { fetchWeeklyCheckin, upsertWeeklyCheckin, type WeeklyCheckin } from '@/src/features/checkin/checkin.repo';
+import { updateMyGoals } from '@/src/features/profile/profile.repo';
 
 function gradeLabel(g: WeeklyStats['grade']) {
   if (g === 'gold') return 'Gold';
@@ -36,9 +37,12 @@ export default function ProgressScreen() {
   const [todayWeight, setTodayWeight] = useState<Pick<WeightEntry, 'weight_kg'> | null>(null);
   const [weightHistory, setWeightHistory] = useState<WeightEntry[]>([]);
 
+  const [checkinWeight, setCheckinWeight] = useState('');
   const [checkinNote, setCheckinNote] = useState('');
   const [weeklyCheckin, setWeeklyCheckin] = useState<WeeklyCheckin | null>(null);
+  const [prevWeeklyCheckin, setPrevWeeklyCheckin] = useState<WeeklyCheckin | null>(null);
   const [checkinSavedTick, setCheckinSavedTick] = useState(0);
+  const [goalsAppliedTick, setGoalsAppliedTick] = useState(0);
 
   const thisWeek = useMemo(() => weeks[weeks.length - 1] ?? null, [weeks]);
 
@@ -89,10 +93,24 @@ export default function ProgressScreen() {
           const c = await fetchWeeklyCheckin(ws);
           setWeeklyCheckin(c);
           setCheckinNote(c?.note ?? '');
+          setCheckinWeight(
+            c?.weight_kg != null
+              ? String(toDisplayWeight(Number(c.weight_kg)).toFixed(1).replace(/\.0$/, ''))
+              : '',
+          );
+
+          // previous week check-in (optional)
+          const prev = new Date(`${ws}T00:00:00.000Z`);
+          prev.setDate(prev.getDate() - 7);
+          const prevWs = prev.toISOString().slice(0, 10);
+          const pc = await fetchWeeklyCheckin(prevWs);
+          setPrevWeeklyCheckin(pc);
         }
       } catch {
         setWeeklyCheckin(null);
+        setPrevWeeklyCheckin(null);
         setCheckinNote('');
+        setCheckinWeight('');
       }
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load progress');
@@ -137,7 +155,8 @@ export default function ProgressScreen() {
   const onSaveWeight = async () => {
     const w = weight.trim() === '' ? null : Number(weight);
 
-    if (w !== null && (!Number.isFinite(w) || w <= 0 || w > 2000)) {
+    const maxDisplay = units === 'lb' ? 700 : 350;
+    if (w !== null && (!Number.isFinite(w) || w <= 0 || w > maxDisplay)) {
       Alert.alert('Invalid weight', `Enter your body weight in ${units} (e.g., ${units === 'lb' ? '180' : '80'})`);
       return;
     }
@@ -153,6 +172,48 @@ export default function ProgressScreen() {
       Alert.alert('Error', e?.message ?? 'Failed to save weight');
     }
   };
+
+  const recommendations = useMemo(() => {
+    if (!thisWeek || !goals) return null;
+
+    const currentSteps = goals.steps_goal;
+    const currentProtein = goals.protein_goal_g;
+
+    // Weight delta (if both weeks exist)
+    const currKg = weeklyCheckin?.weight_kg ?? null;
+    const prevKg = prevWeeklyCheckin?.weight_kg ?? null;
+    const deltaKg = currKg != null && prevKg != null ? currKg - prevKg : null;
+
+    let nextSteps = currentSteps;
+    let nextProtein = currentProtein;
+    const reasons: string[] = [];
+
+    // Steps rule: if you're consistently hitting steps but weight isn't trending down, nudge steps up.
+    if (thisWeek.stepsDaysHit >= 3 && deltaKg != null && deltaKg > -0.2) {
+      nextSteps = Math.min(20000, currentSteps + 1000);
+      reasons.push('You hit your steps goal most days and weight is flat/up → +1000 steps/day.');
+    } else if (thisWeek.stepsDaysHit <= 1 && currentSteps > 3000) {
+      nextSteps = Math.max(3000, currentSteps - 500);
+      reasons.push('Steps goal was hard to hit → make it more doable (-500 steps/day).');
+    } else {
+      reasons.push('Keep steps goal the same.');
+    }
+
+    // Protein rule: if protein goal is rarely hit, reduce slightly to build consistency first.
+    if (thisWeek.proteinDaysHit <= 1 && currentProtein > 80) {
+      nextProtein = Math.max(80, currentProtein - 10);
+      reasons.push('Protein goal felt tough → -10g to build consistency.');
+    } else {
+      reasons.push('Keep protein goal the same.');
+    }
+
+    return {
+      nextSteps,
+      nextProtein,
+      deltaKg,
+      reasons,
+    };
+  }, [thisWeek, goals, weeklyCheckin?.weight_kg, prevWeeklyCheckin?.weight_kg]);
 
   return (
     <ScrollView
@@ -236,8 +297,8 @@ export default function ProgressScreen() {
                 <View style={styles.field}>
                   <Text style={[styles.label, isDark && styles.mutedDark]}>End-of-week weight ({units})</Text>
                   <TextInput
-                    value={weight}
-                    onChangeText={setWeight}
+                    value={checkinWeight}
+                    onChangeText={setCheckinWeight}
                     keyboardType="numeric"
                     placeholder={units === 'lb' ? '180' : '80'}
                     placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
@@ -264,8 +325,9 @@ export default function ProgressScreen() {
               <Pressable
                 style={styles.button}
                 onPress={async () => {
-                  const w = weight.trim() === '' ? null : Number(weight);
-                  if (w !== null && (!Number.isFinite(w) || w <= 0 || w > 2000)) {
+                  const w = checkinWeight.trim() === '' ? null : Number(checkinWeight);
+                  const maxDisplay = units === 'lb' ? 700 : 350;
+                  if (w !== null && (!Number.isFinite(w) || w <= 0 || w > maxDisplay)) {
                     Alert.alert('Invalid weight', `Enter weight in ${units}`);
                     return;
                   }
@@ -280,6 +342,11 @@ export default function ProgressScreen() {
                       note: checkinNote.trim() === '' ? null : checkinNote.trim(),
                     });
                     setWeeklyCheckin(saved);
+                    setCheckinWeight(
+                      saved.weight_kg != null
+                        ? String(toDisplayWeight(Number(saved.weight_kg)).toFixed(1).replace(/\.0$/, ''))
+                        : '',
+                    );
                     setCheckinSavedTick((x) => x + 1);
                     Alert.alert('Saved', 'Weekly check-in saved.');
                   } catch (e: any) {
@@ -297,6 +364,36 @@ export default function ProgressScreen() {
                   Saved: {weeklyCheckin.weight_kg != null ? `${toDisplayWeight(Number(weeklyCheckin.weight_kg)).toFixed(1).replace(/\.0$/, '')} ${units}` : '—'}
                   {weeklyCheckin.note ? ` • “${weeklyCheckin.note}”` : ''}
                 </Text>
+              ) : null}
+
+              {recommendations ? (
+                <View style={{ marginTop: 12 }}>
+                  <Text style={[styles.cardTitle, isDark && styles.textLight]}>Next week suggestion</Text>
+                  <Text style={[styles.muted, isDark && styles.mutedDark]}>
+                    Protein: {recommendations.nextProtein}g/day · Steps: {recommendations.nextSteps}/day
+                  </Text>
+                  <Text style={[styles.help, isDark && styles.mutedDark]}>{recommendations.reasons.join(' ')}</Text>
+
+                  <Pressable
+                    style={styles.button}
+                    onPress={async () => {
+                      try {
+                        await updateMyGoals({ protein_goal_g: recommendations.nextProtein, steps_goal: recommendations.nextSteps });
+                        setGoalsAppliedTick((x) => x + 1);
+                        Alert.alert('Updated', 'Goals updated for next week.');
+                        await refresh();
+                      } catch (e: any) {
+                        Alert.alert('Error', e?.message ?? 'Failed to update goals');
+                      }
+                    }}
+                  >
+                    <Text style={styles.buttonText}>Apply to my goals</Text>
+                  </Pressable>
+
+                  {goalsAppliedTick > 0 ? (
+                    <Text style={[styles.helpSmall, isDark && styles.mutedDark]}>Applied. Check Home/Settings to confirm.</Text>
+                  ) : null}
+                </View>
               ) : null}
             </View>
           </>
