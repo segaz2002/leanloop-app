@@ -27,5 +27,7 @@ Ship a beginner-friendly lifting + fat-loss loop app with subscription, then ite
 - ✅ **v1.0 MVP**: Auth, workouts (A/B/C), logging UX, progress scoreboard, habits (protein/steps)
 - ✅ **v1.1**: QA/polish (progress clarity, scroll/refresh, rest timer persistence, unit toggle propagation)
 - 🟡 **v1.2 (in progress)**: Weight logging + Weekly check-in + rules-based target suggestions + UI theme system refactor
-- 🔜 **v1.3 (next)**: Weight trend chart + stronger weekly adjustment rules + substitutions v1
+  - Added text-first weight trend + **sparkline**
+  - Default weekly suggestions now support **maintenance** (goal picker TBD)
+- 🔜 **v1.3 (next)**: Goal picker (fat loss/maintenance/lean gain) + stronger weekly adjustment rules per goal + substitutions v1
 
