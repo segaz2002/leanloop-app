@@ -103,9 +103,12 @@ export default function ProgressScreen() {
                 <View style={[styles.badge, styles[`badge_${thisWeek.grade}` as const]]}>
                   <Text style={styles.badgeText}>{gradeLabel(thisWeek.grade)}</Text>
                 </View>
-                <Text style={[styles.muted, isDark && styles.mutedDark]}>
-                  Consistency grade for the week
-                </Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.muted, isDark && styles.mutedDark]}>Consistency grade for the week</Text>
+                  <Text style={[styles.helpSmall, isDark && styles.mutedDark]}>
+                    Consistency-first: effort counts. No streak shame.
+                  </Text>
+                </View>
               </View>
 
               <View style={styles.quest}>
@@ -310,5 +313,6 @@ const styles = StyleSheet.create({
   weekValue: { flex: 1.1, color: '#475569' },
   weekRight: { textAlign: 'right' },
   help: { marginTop: 10, fontSize: 12 },
+  helpSmall: { marginTop: 2, fontSize: 12 },
   mini: { marginTop: 2, fontSize: 12 },
 });
