@@ -1,17 +1,17 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 
-import { Text, View } from '@/components/Themed';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useAccent } from '@/src/features/settings/AccentProvider';
+import { Text } from '@/components/Themed';
 import { abandonWorkout, fetchActiveWorkout, startWorkout, type Workout } from '@/src/features/workout/workout.repo';
+import { Screen } from '@/src/ui/Screen';
+import { Card } from '@/src/ui/Card';
+import { Button } from '@/src/ui/Button';
+import { useAppTheme } from '@/src/theme/useAppTheme';
 
 export default function WorkoutsScreen() {
   const router = useRouter();
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
-  const { accentColor, accentTextOn } = useAccent();
+  const t = useAppTheme();
   const [starting, setStarting] = useState<null | 'A' | 'B' | 'C'>(null);
   const [active, setActive] = useState<Workout | null>(null);
 
@@ -71,75 +71,33 @@ export default function WorkoutsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Workouts</Text>
-      <Text style={styles.subtitle}>Start a session.</Text>
+    <Screen>
+      <Text style={[styles.title, { color: t.colors.text }]}>Workouts</Text>
+      <Text style={[styles.subtitle, { color: t.colors.muted }]}>Start a session.</Text>
 
       {active ? (
-        <View style={[styles.card, isDark && styles.cardDark]}>
-          <Text style={styles.cardTitle}>In progress</Text>
-          <Text>Workout {active.day_code} is unfinished.</Text>
-          <Pressable style={[styles.button, { backgroundColor: accentColor }]} onPress={() => router.push(`/workout/${active.id}`)}>
-            <Text style={[styles.buttonText, { color: accentTextOn }]}>Resume workout</Text>
-          </Pressable>
-        </View>
+        <Card>
+          <Text style={[styles.cardTitle, { color: t.colors.text }]}>In progress</Text>
+          <Text style={{ color: t.colors.textSecondary }}>Workout {active.day_code} is unfinished.</Text>
+          <Button title="Resume workout" onPress={() => router.push(`/workout/${active.id}`)} />
+        </Card>
       ) : null}
 
-      <View style={[styles.card, isDark && styles.cardDark]}>
-        <Text style={styles.cardTitle}>This week</Text>
-        <Pressable
-          style={[styles.button, { backgroundColor: accentColor }, starting === 'A' && styles.buttonDisabled]}
-          onPress={() => start('A')}
-          disabled={starting !== null}
-        >
-          <Text style={[styles.buttonText, { color: accentTextOn }]}>Start Workout A</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.button, { backgroundColor: accentColor }, starting === 'B' && styles.buttonDisabled]}
-          onPress={() => start('B')}
-          disabled={starting !== null}
-        >
-          <Text style={[styles.buttonText, { color: accentTextOn }]}>Start Workout B</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.button, { backgroundColor: accentColor }, starting === 'C' && styles.buttonDisabled]}
-          onPress={() => start('C')}
-          disabled={starting !== null}
-        >
-          <Text style={[styles.buttonText, { color: accentTextOn }]}>Start Workout C</Text>
-        </Pressable>
-      </View>
+      <Card style={{ marginTop: 12 }}>
+        <Text style={[styles.cardTitle, { color: t.colors.text }]}>This week</Text>
+        <Button title="Start Workout A" onPress={() => start('A')} disabled={starting !== null} />
+        <Button title="Start Workout B" onPress={() => start('B')} disabled={starting !== null} style={{ marginTop: 10 }} />
+        <Button title="Start Workout C" onPress={() => start('C')} disabled={starting !== null} style={{ marginTop: 10 }} />
+      </Card>
 
-      <Text style={styles.muted}>History & scheduling come next.</Text>
-    </View>
+      <Text style={[styles.muted, { color: t.colors.muted }]}>History & scheduling come next.</Text>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  title: { fontSize: 22, fontWeight: '800', marginBottom: 6 },
-  subtitle: { opacity: 0.8, marginBottom: 16 },
-  card: {
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
-    backgroundColor: '#ffffff',
-    marginBottom: 12,
-  },
-  cardDark: {
-    borderColor: 'rgba(255,255,255,0.10)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-  },
-  cardTitle: { fontWeight: '800', marginBottom: 10 },
-  button: {
-    backgroundColor: '#111827',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: 'white', fontWeight: '800' },
-  muted: { opacity: 0.7 },
+  title: { fontSize: 22, fontWeight: '900', marginBottom: 6 },
+  subtitle: { marginBottom: 16 },
+  cardTitle: { fontWeight: '900', marginBottom: 10 },
+  muted: { marginTop: 12 },
 });

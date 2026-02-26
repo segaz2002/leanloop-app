@@ -2,9 +2,13 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet } from 'react-native';
 
-import { Text, View } from '@/components/Themed';
+import { Text } from '@/components/Themed';
 import { HomeHabitsCard } from '@/src/features/home/HomeHabitsCard';
 import { useAccent } from '@/src/features/settings/AccentProvider';
+import { Screen } from '@/src/ui/Screen';
+import { Card } from '@/src/ui/Card';
+import { Button } from '@/src/ui/Button';
+import { useAppTheme } from '@/src/theme/useAppTheme';
 import {
   abandonWorkout,
   fetchActiveWorkout,
@@ -24,7 +28,11 @@ function nextDayFromLast(last: Workout | null): DayCode {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { accentColor, accentTextOn } = useAccent();
+  const t = useAppTheme();
+
+  // Accent is now used by shared UI primitives.
+  useAccent();
+
   const [starting, setStarting] = useState(false);
   const [active, setActive] = useState<Workout | null>(null);
   const [lastCompleted, setLastCompleted] = useState<Workout | null>(null);
@@ -93,34 +101,29 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>LeanLoop</Text>
-      <Text style={styles.subtitle}>Your weekly plan that adapts.</Text>
+    <Screen>
+      <Text style={[styles.title, { color: t.colors.text }]}>LeanLoop</Text>
+      <Text style={[styles.subtitle, { color: t.colors.muted }]}>Your weekly plan that adapts.</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Today</Text>
-        <Text>{active ? `Workout in progress: ${active.day_code}` : `Next up: Workout ${nextUp}`}</Text>
-        <Pressable
-          style={[styles.primaryButton, { backgroundColor: accentColor }, starting && styles.buttonDisabled]}
-          onPress={onPrimary}
-          disabled={starting}
-        >
-          <Text style={[styles.primaryButtonText, { color: accentTextOn }]}>
-            {starting ? 'Starting…' : active ? 'Resume workout' : "Start today’s workout"}
-          </Text>
-        </Pressable>
+      <Card>
+        <Text style={[styles.cardTitle, { color: t.colors.text }]}>Today</Text>
+        <Text style={{ color: t.colors.textSecondary }}>
+          {active ? `Workout in progress: ${active.day_code}` : `Next up: Workout ${nextUp}`}
+        </Text>
+
+        <Button title={starting ? 'Starting…' : active ? 'Resume workout' : "Start today’s workout"} onPress={onPrimary} disabled={starting} />
 
         {active ? (
           <Pressable style={styles.secondaryButton} onPress={onStartNew}>
-            <Text style={styles.secondaryButtonText}>Start new workout</Text>
+            <Text style={[styles.secondaryButtonText, { color: t.colors.text }]}>Start new workout</Text>
           </Pressable>
         ) : null}
-      </View>
+      </Card>
 
-      <View style={styles.card}>
+      <Card style={{ marginTop: 12 }}>
         <HomeHabitsCard />
-      </View>
-    </View>
+      </Card>
+    </Screen>
   );
 }
 
