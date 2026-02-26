@@ -63,17 +63,30 @@ export async function fetchWeeklyStats(weeks: number): Promise<{ profile: { prot
     const workoutsCompleted = completedDates.filter((d) => d >= start && d <= end).length;
 
     // habits
+    let proteinDaysLogged = 0;
     let proteinDaysHit = 0;
+    let stepsDaysLogged = 0;
     let stepsDaysHit = 0;
     for (let i = 0; i < 7; i++) {
       const day = toISODate(addDays(ws, i));
       const h = habitsByDate.get(day);
+      if (h?.protein_g != null) proteinDaysLogged++;
       if (h?.protein_g != null && h.protein_g >= profile.protein_goal_g) proteinDaysHit++;
+      if (h?.steps != null) stepsDaysLogged++;
       if (h?.steps != null && h.steps >= profile.steps_goal) stepsDaysHit++;
     }
 
     const grade = gradeWeek({ workoutsCompleted, proteinDaysHit, stepsDaysHit });
-    return { weekStart: start, weekEnd: end, workoutsCompleted, proteinDaysHit, stepsDaysHit, grade };
+    return {
+      weekStart: start,
+      weekEnd: end,
+      workoutsCompleted,
+      proteinDaysLogged,
+      proteinDaysHit,
+      stepsDaysLogged,
+      stepsDaysHit,
+      grade,
+    };
   });
 
   return { profile: { protein_goal_g: profile.protein_goal_g, steps_goal: profile.steps_goal }, weeks: weeksOut };

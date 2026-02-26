@@ -2,8 +2,13 @@ export type WeeklyStats = {
   weekStart: string; // yyyy-mm-dd
   weekEnd: string; // yyyy-mm-dd
   workoutsCompleted: number;
-  proteinDaysHit: number;
-  stepsDaysHit: number;
+
+  // Habits
+  proteinDaysLogged: number; // days with any protein value logged (non-null)
+  proteinDaysHit: number; // days protein >= goal
+  stepsDaysLogged: number; // days with any steps value logged (non-null)
+  stepsDaysHit: number; // days steps >= goal
+
   grade: 'starter' | 'bronze' | 'silver' | 'gold';
 };
 

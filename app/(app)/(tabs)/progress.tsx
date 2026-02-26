@@ -133,6 +133,7 @@ export default function ProgressScreen() {
                 <Text style={[styles.line, isDark && styles.textLight]}>
                   Protein goal days (≥ goal): {thisWeek.proteinDaysHit} / 4 {goals ? `(goal ${goals.protein_goal_g}g)` : ''}
                 </Text>
+                <Text style={[styles.mini, isDark && styles.mutedDark]}>Protein logged days: {thisWeek.proteinDaysLogged} / 7</Text>
                 <View style={styles.barOuter}>
                   <View style={[styles.barInner, { width: `${Math.min(thisWeek.proteinDaysHit / 4, 1) * 100}%` }]} />
                 </View>
@@ -142,6 +143,7 @@ export default function ProgressScreen() {
                 <Text style={[styles.line, isDark && styles.textLight]}>
                   Steps goal days (≥ goal): {thisWeek.stepsDaysHit} / 4 {goals ? `(goal ${goals.steps_goal})` : ''}
                 </Text>
+                <Text style={[styles.mini, isDark && styles.mutedDark]}>Steps logged days: {thisWeek.stepsDaysLogged} / 7</Text>
                 <View style={styles.barOuter}>
                   <View style={[styles.barInner, { width: `${Math.min(thisWeek.stepsDaysHit / 4, 1) * 100}%` }]} />
                 </View>
@@ -296,4 +298,5 @@ const styles = StyleSheet.create({
   weekLabel: { fontWeight: '800', color: '#0f172a' },
   weekValue: { color: '#475569' },
   help: { marginTop: 10, fontSize: 12 },
+  mini: { marginTop: 2, fontSize: 12 },
 });
