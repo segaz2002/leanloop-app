@@ -340,8 +340,8 @@ export default function ProgressScreen() {
                 />
               </View>
 
-              <Pressable
-                style={styles.button}
+              <Button
+                title={weeklyCheckin || checkinSavedTick > 0 ? 'Update check-in' : 'Save check-in'}
                 onPress={async () => {
                   const w = checkinWeight.trim() === '' ? null : Number(checkinWeight);
                   const maxDisplay = units === 'lb' ? 700 : 350;
@@ -371,11 +371,8 @@ export default function ProgressScreen() {
                     Alert.alert('Error', e?.message ?? 'Failed to save check-in');
                   }
                 }}
-              >
-                <Text style={[styles.buttonText, { color: t.colors.accentTextOn }]}>
-                  {weeklyCheckin || checkinSavedTick > 0 ? 'Update check-in' : 'Save check-in'}
-                </Text>
-              </Pressable>
+                style={{ marginTop: 12 }}
+              />
 
               {weeklyCheckin ? (
                 <Text style={[styles.help, isDark && styles.mutedDark]}>
