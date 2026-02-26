@@ -22,7 +22,7 @@ type AccentContextValue = {
 const AccentContext = createContext<AccentContextValue | null>(null);
 
 export function AccentProvider({ children }: { children: React.ReactNode }) {
-  const [accent, setAccentState] = useState<Accent>('teal');
+  const [accent, setAccentState] = useState<Accent>('yellow');
 
   useEffect(() => {
     (async () => {
