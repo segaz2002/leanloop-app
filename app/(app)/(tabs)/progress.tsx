@@ -491,14 +491,36 @@ export default function ProgressScreen() {
             <Button title="Save weight" onPress={onSaveWeight} style={{ marginTop: 12 }} />
 
             {weightHistory.length ? (
-              <Text style={[styles.help, isDark && styles.mutedDark]}>
-                Last {Math.min(weightHistory.length, 7)} entries: {weightHistory
-                  .slice(-7)
-                  .map((x) => `${x.date}: ${x.weight_kg == null ? '—' : toDisplayWeight(Number(x.weight_kg)).toFixed(1).replace(/\.0$/, '')} ${units}`)
-                  .join(' • ')}
-              </Text>
+              (() => {
+                const last = weightHistory.filter((x) => x.weight_kg != null);
+                const last7 = last.slice(-7);
+                const prev7 = last.slice(-14, -7);
+                const avg = (xs: typeof last7) => {
+                  if (!xs.length) return null;
+                  const sum = xs.reduce((a, x) => a + Number(x.weight_kg ?? 0), 0);
+                  return sum / xs.length;
+                };
+                const avg7 = avg(last7);
+                const avgPrev = avg(prev7);
+                const delta = avg7 != null && avgPrev != null ? avg7 - avgPrev : null;
+
+                return (
+                  <>
+                    <Body muted>
+                      Trend: {avg7 != null ? `${toDisplayWeight(avg7).toFixed(1).replace(/\.0$/, '')} ${units} (7-day avg)` : '—'}
+                      {delta != null ? ` • ${delta < 0 ? '↓' : '↑'} ${Math.abs(toDisplayWeight(delta)).toFixed(1).replace(/\.0$/, '')} ${units} vs prior week` : ''}
+                    </Body>
+                    <Body muted style={{ marginTop: 8 }}>
+                      Last {Math.min(weightHistory.length, 7)} entries: {weightHistory
+                        .slice(-7)
+                        .map((x) => `${x.date}: ${x.weight_kg == null ? '—' : toDisplayWeight(Number(x.weight_kg)).toFixed(1).replace(/\.0$/, '')} ${units}`)
+                        .join(' • ')}
+                    </Body>
+                  </>
+                );
+              })()
             ) : (
-              <Text style={[styles.help, isDark && styles.mutedDark]}>Log a few weigh-ins to see a trend here.</Text>
+              <Body muted>Log a few weigh-ins to see a trend here.</Body>
             )}
           </Card>
 
