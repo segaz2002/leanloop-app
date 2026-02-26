@@ -190,17 +190,26 @@ export default function ProgressScreen() {
 
           <View style={[styles.card, isDark && styles.cardDark]}>
             <Text style={[styles.cardTitle, isDark && styles.textLight]}>Last 4 weeks</Text>
+
+            <View style={[styles.weekRow, styles.weekHeaderRow]}>
+              <Text style={[styles.weekLabel, isDark && styles.textLight]}>Week</Text>
+              <Text style={[styles.weekValue, styles.weekHeaderText, isDark && styles.mutedDark]}>Grade</Text>
+              <Text style={[styles.weekValue, styles.weekHeaderText, styles.weekRight, isDark && styles.mutedDark]}>W</Text>
+              <Text style={[styles.weekValue, styles.weekHeaderText, styles.weekRight, isDark && styles.mutedDark]}>P≥</Text>
+              <Text style={[styles.weekValue, styles.weekHeaderText, styles.weekRight, isDark && styles.mutedDark]}>S≥</Text>
+            </View>
+
             {weeks.map((w) => (
               <View key={w.weekStart} style={styles.weekRow}>
                 <Text style={[styles.weekLabel, isDark && styles.textLight]}>{w.weekStart}</Text>
                 <Text style={[styles.weekValue, isDark && styles.mutedDark]}>{gradeLabel(w.grade)}</Text>
-                <Text style={[styles.weekValue, isDark && styles.mutedDark]}>{w.workoutsCompleted}w</Text>
-                <Text style={[styles.weekValue, isDark && styles.mutedDark]}>{w.proteinDaysHit}p</Text>
-                <Text style={[styles.weekValue, isDark && styles.mutedDark]}>{w.stepsDaysHit}s</Text>
+                <Text style={[styles.weekValue, styles.weekRight, isDark && styles.mutedDark]}>{w.workoutsCompleted}</Text>
+                <Text style={[styles.weekValue, styles.weekRight, isDark && styles.mutedDark]}>{w.proteinDaysHit}</Text>
+                <Text style={[styles.weekValue, styles.weekRight, isDark && styles.mutedDark]}>{w.stepsDaysHit}</Text>
               </View>
             ))}
             <Text style={[styles.help, isDark && styles.mutedDark]}>
-              Legend: w=workouts, p=protein days hit, s=steps days hit
+              Legend: W=workouts completed • P≥=protein goal days • S≥=steps goal days
             </Text>
           </View>
         </>
@@ -294,9 +303,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#0f766e',
   },
 
-  weekRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-  weekLabel: { fontWeight: '800', color: '#0f172a' },
-  weekValue: { color: '#475569' },
+  weekRow: { flexDirection: 'row', marginTop: 10 },
+  weekHeaderRow: { marginTop: 6, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: 'rgba(15, 23, 42, 0.08)' },
+  weekHeaderText: { letterSpacing: 0.3 },
+  weekLabel: { flex: 2.2, fontWeight: '800', color: '#0f172a' },
+  weekValue: { flex: 1.1, color: '#475569' },
+  weekRight: { textAlign: 'right' },
   help: { marginTop: 10, fontSize: 12 },
   mini: { marginTop: 2, fontSize: 12 },
 });
