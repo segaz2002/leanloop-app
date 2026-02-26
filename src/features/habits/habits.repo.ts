@@ -43,3 +43,14 @@ export async function fetchHabitsRange(args: { from: string; to: string }) {
   if (res.error) throw res.error;
   return (res.data ?? []) as HabitsDaily[];
 }
+
+export async function fetchHabitsForDate(date: string) {
+  const res = await supabase
+    .from('habits_daily')
+    .select('user_id, date, protein_g, steps')
+    .eq('date', date)
+    .maybeSingle();
+
+  if (res.error) throw res.error;
+  return (res.data as HabitsDaily | null) ?? null;
+}

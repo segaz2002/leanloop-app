@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
+import { HomeHabitsCard } from '@/src/features/home/HomeHabitsCard';
 import {
   abandonWorkout,
   fetchActiveWorkout,
@@ -111,9 +112,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Today’s habits</Text>
-        <Text>Protein: 0 / goal</Text>
-        <Text>Steps: 0 / goal</Text>
+        <HomeHabitsCard />
       </View>
     </View>
   );

@@ -102,6 +102,7 @@ export default function ProgressScreen() {
               <View style={styles.metricBlock}>
                 <Text style={[styles.line, isDark && styles.textLight]}>
                   Workouts: {thisWeek.workoutsCompleted} (goal 3)
+                  {thisWeek.workoutsCompleted > 3 ? ` • +${thisWeek.workoutsCompleted - 3} extra credit` : ''}
                 </Text>
                 <View style={styles.barOuter}>
                   <View style={[styles.barInner, { width: `${Math.min(thisWeek.workoutsCompleted / 3, 1) * 100}%` }]} />

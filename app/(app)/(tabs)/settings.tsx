@@ -4,6 +4,7 @@ import { Pressable } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useAuth } from '@/src/features/auth/AuthProvider';
 import { useThemePreference } from '@/src/features/settings/ThemePreferenceProvider';
+import { GoalsCard } from '@/src/features/settings/GoalsCard';
 import { useUnits } from '@/src/features/settings/UnitsProvider';
 
 function ThemeModeRow() {
@@ -35,6 +36,11 @@ export default function SettingsScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Account</Text>
         <Text>{user?.email ?? '—'}</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Goals</Text>
+        <GoalsCard />
       </View>
 
       <View style={styles.card}>
