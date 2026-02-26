@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { Text, View } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -40,9 +41,13 @@ export default function ProgressScreen() {
     }
   };
 
-  useEffect(() => {
-    refresh();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      refresh();
+      // no cleanup
+      return undefined;
+    }, []),
+  );
 
   const onLogToday = async () => {
     const p = protein.trim() === '' ? null : Number(protein);
