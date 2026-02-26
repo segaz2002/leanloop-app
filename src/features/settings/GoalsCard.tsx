@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 
-import { Text, View } from '@/components/Themed';
-import { useColorScheme } from '@/components/useColorScheme';
+import { View } from '@/components/Themed';
 import { fetchMyProfile, updateMyGoals } from '@/src/features/profile/profile.repo';
-import { useAccent } from '@/src/features/settings/AccentProvider';
+import { Button } from '@/src/ui/Button';
+import { Input } from '@/src/ui/Input';
+import { Body, Label } from '@/src/ui/Typography';
 
 export function GoalsCard() {
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
-
-  const { accentColor, accentTextOn } = useAccent();
 
   const [loading, setLoading] = useState(true);
   const [proteinGoal, setProteinGoal] = useState('');
@@ -62,43 +59,22 @@ export function GoalsCard() {
 
   return (
     <View style={styles.block}>
-      <Text style={[styles.title, isDark && styles.textLight]}>Goals</Text>
       {loading ? (
-        <Text style={[styles.muted, isDark && styles.mutedDark]}>Loading…</Text>
+        <Body muted>Loading…</Body>
       ) : (
         <>
           <View style={styles.row}>
             <View style={styles.field}>
-              <Text style={[styles.label, isDark && styles.mutedDark]}>Protein (g/day)</Text>
-              <TextInput
-                value={proteinGoal}
-                onChangeText={setProteinGoal}
-                keyboardType="numeric"
-                placeholder="120"
-                placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                style={[styles.input, isDark && styles.inputDark]}
-              />
+              <Label>Protein (g/day)</Label>
+              <Input value={proteinGoal} onChangeText={setProteinGoal} keyboardType="numeric" placeholder="120" />
             </View>
             <View style={styles.field}>
-              <Text style={[styles.label, isDark && styles.mutedDark]}>Steps/day</Text>
-              <TextInput
-                value={stepsGoal}
-                onChangeText={setStepsGoal}
-                keyboardType="numeric"
-                placeholder="8000"
-                placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
-                style={[styles.input, isDark && styles.inputDark]}
-              />
+              <Label>Steps/day</Label>
+              <Input value={stepsGoal} onChangeText={setStepsGoal} keyboardType="numeric" placeholder="8000" />
             </View>
           </View>
 
-          <Pressable
-            style={[styles.button, { backgroundColor: accentColor }, saving && styles.buttonDisabled]}
-            onPress={onSave}
-            disabled={saving}
-          >
-            <Text style={[styles.buttonText, { color: accentTextOn }]}>{saving ? 'Saving…' : 'Save goals'}</Text>
-          </Pressable>
+          <Button title={saving ? 'Saving…' : 'Save goals'} onPress={onSave} disabled={saving} style={{ marginTop: 12 }} />
         </>
       )}
     </View>
@@ -107,34 +83,6 @@ export function GoalsCard() {
 
 const styles = StyleSheet.create({
   block: {},
-  title: { fontWeight: '700', marginBottom: 8, color: '#0f172a' },
-  textLight: { color: '#e5e7eb' },
-  muted: { color: '#334155' },
-  mutedDark: { color: '#94a3b8' },
   row: { flexDirection: 'row', gap: 12 },
   field: { flex: 1 },
-  label: { fontSize: 12, marginBottom: 6, color: '#475569' },
-  input: {
-    borderWidth: 1,
-    borderColor: 'rgba(15, 23, 42, 0.18)',
-    backgroundColor: '#ffffff',
-    color: '#0f172a',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-  },
-  inputDark: {
-    borderColor: 'rgba(255,255,255,0.18)',
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    color: '#e5e7eb',
-  },
-  button: {
-    marginTop: 12,
-    backgroundColor: '#111827',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  buttonDisabled: { opacity: 0.65 },
-  buttonText: { color: 'white', fontWeight: '900' },
 });
