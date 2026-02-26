@@ -7,6 +7,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { fetchWeeklyStats, todayISO } from '@/src/features/progress/progress.repo';
 import type { WeeklyStats } from '@/src/features/progress/progress.logic';
 import { fetchHabitsForDate, upsertHabitsForDate, type HabitsDaily } from '@/src/features/habits/habits.repo';
+import { fetchWeightForDate, fetchWeightRange, upsertWeightForDate, type WeightEntry } from '@/src/features/weight/weight.repo';
+import { useUnits } from '@/src/features/settings/UnitsProvider';
 
 function gradeLabel(g: WeeklyStats['grade']) {
   if (g === 'gold') return 'Gold';
@@ -18,6 +20,7 @@ function gradeLabel(g: WeeklyStats['grade']) {
 export default function ProgressScreen() {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
+  const { units, toDisplayWeight, toKg } = useUnits();
 
   const [loading, setLoading] = useState(true);
   const [weeks, setWeeks] = useState<WeeklyStats[]>([]);
@@ -28,13 +31,29 @@ export default function ProgressScreen() {
   const [todayHabits, setTodayHabits] = useState<Pick<HabitsDaily, 'protein_g' | 'steps'> | null>(null);
   const [savedTick, setSavedTick] = useState(0);
 
+  const [weight, setWeight] = useState('');
+  const [todayWeight, setTodayWeight] = useState<Pick<WeightEntry, 'weight_kg'> | null>(null);
+  const [weightHistory, setWeightHistory] = useState<WeightEntry[]>([]);
+
   const thisWeek = useMemo(() => weeks[weeks.length - 1] ?? null, [weeks]);
 
   const refresh = async () => {
     setLoading(true);
     try {
       const date = todayISO();
-      const [res, today] = await Promise.all([fetchWeeklyStats(4), fetchHabitsForDate(date)]);
+
+      // last 28 days for simple history list
+      const from = new Date();
+      from.setDate(from.getDate() - 28);
+      const fromISO = from.toISOString().slice(0, 10);
+
+      const [res, today, wToday, wRange] = await Promise.all([
+        fetchWeeklyStats(4),
+        fetchHabitsForDate(date),
+        fetchWeightForDate(date),
+        fetchWeightRange({ from: fromISO, to: date }),
+      ]);
+
       setGoals(res.profile);
       setWeeks(res.weeks);
       setTodayHabits(today ? { protein_g: today.protein_g, steps: today.steps } : null);
@@ -42,6 +61,10 @@ export default function ProgressScreen() {
       // Prefill inputs from today's saved values (helps confirm the save worked)
       setProtein(today?.protein_g != null ? String(today.protein_g) : '');
       setSteps(today?.steps != null ? String(today.steps) : '');
+
+      setTodayWeight(wToday ? { weight_kg: wToday.weight_kg } : null);
+      setWeightHistory(wRange);
+      setWeight(wToday?.weight_kg != null ? String(toDisplayWeight(Number(wToday.weight_kg)).toFixed(1).replace(/\.0$/, '')) : '');
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load progress');
     } finally {
@@ -79,6 +102,26 @@ export default function ProgressScreen() {
       await refresh();
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to save habits');
+    }
+  };
+
+  const onSaveWeight = async () => {
+    const w = weight.trim() === '' ? null : Number(weight);
+
+    if (w !== null && (!Number.isFinite(w) || w <= 0 || w > 2000)) {
+      Alert.alert('Invalid weight', `Enter your body weight in ${units} (e.g., ${units === 'lb' ? '180' : '80'})`);
+      return;
+    }
+
+    try {
+      const weightKg = w === null ? null : Number(toKg(w).toFixed(3));
+      const saved = await upsertWeightForDate({ date: todayISO(), weight_kg: weightKg });
+      setTodayWeight({ weight_kg: saved.weight_kg });
+      // Keep the input in display units
+      setWeight(saved.weight_kg != null ? String(toDisplayWeight(Number(saved.weight_kg)).toFixed(1).replace(/\.0$/, '')) : '');
+      await refresh();
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to save weight');
     }
   };
 
@@ -189,6 +232,40 @@ export default function ProgressScreen() {
             <Pressable style={styles.button} onPress={onLogToday}>
               <Text style={styles.buttonText}>Save</Text>
             </Pressable>
+          </View>
+
+          <View style={[styles.card, isDark && styles.cardDark]}>
+            <Text style={[styles.cardTitle, isDark && styles.textLight]}>Weight</Text>
+            <Text style={[styles.muted, isDark && styles.mutedDark]}>
+              Today: {todayWeight?.weight_kg != null ? `${toDisplayWeight(Number(todayWeight.weight_kg)).toFixed(1).replace(/\.0$/, '')} ${units}` : '—'}
+            </Text>
+            <View style={styles.row}>
+              <View style={styles.field}>
+                <Text style={[styles.label, isDark && styles.mutedDark]}>Body weight ({units})</Text>
+                <TextInput
+                  value={weight}
+                  onChangeText={setWeight}
+                  keyboardType="numeric"
+                  placeholder={units === 'lb' ? '180' : '80'}
+                  placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
+                  style={[styles.input, isDark && styles.inputDark]}
+                />
+              </View>
+            </View>
+            <Pressable style={styles.button} onPress={onSaveWeight}>
+              <Text style={styles.buttonText}>Save weight</Text>
+            </Pressable>
+
+            {weightHistory.length ? (
+              <Text style={[styles.help, isDark && styles.mutedDark]}>
+                Last {Math.min(weightHistory.length, 7)} entries: {weightHistory
+                  .slice(-7)
+                  .map((x) => `${x.date}: ${x.weight_kg == null ? '—' : toDisplayWeight(Number(x.weight_kg)).toFixed(1).replace(/\.0$/, '')} ${units}`)
+                  .join(' • ')}
+              </Text>
+            ) : (
+              <Text style={[styles.help, isDark && styles.mutedDark]}>Log a few weigh-ins to see a trend here.</Text>
+            )}
           </View>
 
           <View style={[styles.card, isDark && styles.cardDark]}>
