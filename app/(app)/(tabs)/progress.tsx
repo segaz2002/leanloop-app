@@ -11,6 +11,7 @@ import { fetchWeightForDate, fetchWeightRange, upsertWeightForDate, type WeightE
 import { useUnits } from '@/src/features/settings/UnitsProvider';
 import { fetchWeeklyCheckin, upsertWeeklyCheckin, type WeeklyCheckin } from '@/src/features/checkin/checkin.repo';
 import { updateMyGoals } from '@/src/features/profile/profile.repo';
+import { useAccent } from '@/src/features/settings/AccentProvider';
 
 function gradeLabel(g: WeeklyStats['grade']) {
   if (g === 'gold') return 'Gold';
@@ -23,6 +24,7 @@ export default function ProgressScreen() {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
   const { units, toDisplayWeight, toKg } = useUnits();
+  const { accentColor, accentTextOn } = useAccent();
 
   const [loading, setLoading] = useState(true);
   const [weeks, setWeeks] = useState<WeeklyStats[]>([]);
@@ -252,7 +254,15 @@ export default function ProgressScreen() {
                   {thisWeek.workoutsCompleted >= 3 ? ' — Quest cleared' : ''}
                 </Text>
                 <View style={styles.barOuter}>
-                  <View style={[styles.barInner, { width: `${Math.min(thisWeek.workoutsCompleted / 3, 1) * 100}%` }]} />
+                  <View
+                    style={[
+                      styles.barInner,
+                      {
+                        backgroundColor: accentColor,
+                        width: `${Math.min(thisWeek.workoutsCompleted / 3, 1) * 100}%`,
+                      },
+                    ]}
+                  />
                 </View>
               </View>
 
@@ -262,7 +272,15 @@ export default function ProgressScreen() {
                   {thisWeek.workoutsCompleted > 3 ? ` • +${thisWeek.workoutsCompleted - 3} extra credit` : ''}
                 </Text>
                 <View style={styles.barOuter}>
-                  <View style={[styles.barInner, { width: `${Math.min(thisWeek.workoutsCompleted / 3, 1) * 100}%` }]} />
+                  <View
+                    style={[
+                      styles.barInner,
+                      {
+                        backgroundColor: accentColor,
+                        width: `${Math.min(thisWeek.workoutsCompleted / 3, 1) * 100}%`,
+                      },
+                    ]}
+                  />
                 </View>
               </View>
 
@@ -272,7 +290,7 @@ export default function ProgressScreen() {
                 </Text>
                 <Text style={[styles.mini, isDark && styles.mutedDark]}>Protein logged days: {thisWeek.proteinDaysLogged} / 7</Text>
                 <View style={styles.barOuter}>
-                  <View style={[styles.barInner, { width: `${Math.min(thisWeek.proteinDaysHit / 4, 1) * 100}%` }]} />
+                  <View style={[styles.barInner, { backgroundColor: accentColor, width: `${Math.min(thisWeek.proteinDaysHit / 4, 1) * 100}%` }]} />
                 </View>
               </View>
 
@@ -282,7 +300,7 @@ export default function ProgressScreen() {
                 </Text>
                 <Text style={[styles.mini, isDark && styles.mutedDark]}>Steps logged days: {thisWeek.stepsDaysLogged} / 7</Text>
                 <View style={styles.barOuter}>
-                  <View style={[styles.barInner, { width: `${Math.min(thisWeek.stepsDaysHit / 4, 1) * 100}%` }]} />
+                  <View style={[styles.barInner, { backgroundColor: accentColor, width: `${Math.min(thisWeek.stepsDaysHit / 4, 1) * 100}%` }]} />
                 </View>
               </View>
             </View>
@@ -354,7 +372,7 @@ export default function ProgressScreen() {
                   }
                 }}
               >
-                <Text style={styles.buttonText}>
+                <Text style={[styles.buttonText, { color: accentTextOn }]}>
                   {weeklyCheckin || checkinSavedTick > 0 ? 'Update check-in' : 'Save check-in'}
                 </Text>
               </Pressable>
@@ -375,7 +393,7 @@ export default function ProgressScreen() {
                   <Text style={[styles.help, isDark && styles.mutedDark]}>{recommendations.reasons.join(' ')}</Text>
 
                   <Pressable
-                    style={styles.button}
+                    style={[styles.button, { backgroundColor: accentColor }]}
                     onPress={async () => {
                       try {
                         await updateMyGoals({ protein_goal_g: recommendations.nextProtein, steps_goal: recommendations.nextSteps });
@@ -387,7 +405,7 @@ export default function ProgressScreen() {
                       }
                     }}
                   >
-                    <Text style={styles.buttonText}>Apply to my goals</Text>
+                    <Text style={[styles.buttonText, { color: accentTextOn }]}>Apply to my goals</Text>
                   </Pressable>
 
                   {goalsAppliedTick > 0 ? (
@@ -431,8 +449,8 @@ export default function ProgressScreen() {
                 />
               </View>
             </View>
-            <Pressable style={styles.button} onPress={onLogToday}>
-              <Text style={styles.buttonText}>Save</Text>
+            <Pressable style={[styles.button, { backgroundColor: accentColor }]} onPress={onLogToday}>
+              <Text style={[styles.buttonText, { color: accentTextOn }]}>Save</Text>
             </Pressable>
           </View>
 
@@ -454,8 +472,8 @@ export default function ProgressScreen() {
                 />
               </View>
             </View>
-            <Pressable style={styles.button} onPress={onSaveWeight}>
-              <Text style={styles.buttonText}>Save weight</Text>
+            <Pressable style={[styles.button, { backgroundColor: accentColor }]} onPress={onSaveWeight}>
+              <Text style={[styles.buttonText, { color: accentTextOn }]}>Save weight</Text>
             </Pressable>
 
             {weightHistory.length ? (
@@ -582,6 +600,7 @@ const styles = StyleSheet.create({
   },
   barInner: {
     height: '100%',
+    // backgroundColor is overridden at call sites via accentColor
     backgroundColor: '#0f766e',
   },
 

@@ -4,6 +4,7 @@ import { Alert, Pressable, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
 import { HomeHabitsCard } from '@/src/features/home/HomeHabitsCard';
+import { useAccent } from '@/src/features/settings/AccentProvider';
 import {
   abandonWorkout,
   fetchActiveWorkout,
@@ -23,6 +24,7 @@ function nextDayFromLast(last: Workout | null): DayCode {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { accentColor, accentTextOn } = useAccent();
   const [starting, setStarting] = useState(false);
   const [active, setActive] = useState<Workout | null>(null);
   const [lastCompleted, setLastCompleted] = useState<Workout | null>(null);
@@ -98,8 +100,12 @@ export default function HomeScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Today</Text>
         <Text>{active ? `Workout in progress: ${active.day_code}` : `Next up: Workout ${nextUp}`}</Text>
-        <Pressable style={[styles.primaryButton, starting && styles.buttonDisabled]} onPress={onPrimary} disabled={starting}>
-          <Text style={styles.primaryButtonText}>
+        <Pressable
+          style={[styles.primaryButton, { backgroundColor: accentColor }, starting && styles.buttonDisabled]}
+          onPress={onPrimary}
+          disabled={starting}
+        >
+          <Text style={[styles.primaryButtonText, { color: accentTextOn }]}>
             {starting ? 'Starting…' : active ? 'Resume workout' : "Start today’s workout"}
           </Text>
         </Pressable>

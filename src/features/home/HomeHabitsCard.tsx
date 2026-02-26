@@ -7,10 +7,13 @@ import { fetchHabitsForDate, upsertHabitsForDate } from '@/src/features/habits/h
 import { fetchMyProfile } from '@/src/features/profile/profile.repo';
 import { todayISO } from '@/src/features/progress/progress.repo';
 import { supabase } from '@/src/lib/supabase';
+import { useAccent } from '@/src/features/settings/AccentProvider';
 
 export function HomeHabitsCard() {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
+
+  const { accentColor, accentTextOn } = useAccent();
 
   const [loading, setLoading] = useState(true);
   const [proteinGoal, setProteinGoal] = useState<number | null>(null);
@@ -167,8 +170,12 @@ export function HomeHabitsCard() {
             </View>
           </View>
 
-          <Pressable style={[styles.button, saving && styles.buttonDisabled]} onPress={onSave} disabled={saving}>
-            <Text style={styles.buttonText}>{saving ? 'Saving…' : 'Save'}</Text>
+          <Pressable
+            style={[styles.button, { backgroundColor: accentColor }, saving && styles.buttonDisabled]}
+            onPress={onSave}
+            disabled={saving}
+          >
+            <Text style={[styles.buttonText, { color: accentTextOn }]}>{saving ? 'Saving…' : 'Save'}</Text>
           </Pressable>
         </>
       )}

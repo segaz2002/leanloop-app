@@ -4,10 +4,13 @@ import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
 import { fetchMyProfile, updateMyGoals } from '@/src/features/profile/profile.repo';
+import { useAccent } from '@/src/features/settings/AccentProvider';
 
 export function GoalsCard() {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
+
+  const { accentColor, accentTextOn } = useAccent();
 
   const [loading, setLoading] = useState(true);
   const [proteinGoal, setProteinGoal] = useState('');
@@ -89,8 +92,12 @@ export function GoalsCard() {
             </View>
           </View>
 
-          <Pressable style={[styles.button, saving && styles.buttonDisabled]} onPress={onSave} disabled={saving}>
-            <Text style={styles.buttonText}>{saving ? 'Saving…' : 'Save goals'}</Text>
+          <Pressable
+            style={[styles.button, { backgroundColor: accentColor }, saving && styles.buttonDisabled]}
+            onPress={onSave}
+            disabled={saving}
+          >
+            <Text style={[styles.buttonText, { color: accentTextOn }]}>{saving ? 'Saving…' : 'Save goals'}</Text>
           </Pressable>
         </>
       )}

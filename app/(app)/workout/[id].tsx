@@ -10,6 +10,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { getExerciseSlugFromName } from '@/src/features/exercise/catalog';
 import type { WorkoutExercise, WorkoutSet } from '@/src/features/workout/workout.repo';
 import { useUnits } from '@/src/features/settings/UnitsProvider';
+import { useAccent } from '@/src/features/settings/AccentProvider';
 import { addSet, completeWorkout, deleteSet, fetchLastPerformance, fetchWorkout, updateSet } from '@/src/features/workout/workout.repo';
 
 const REST_SECONDS_DEFAULT = 90;
@@ -22,6 +23,7 @@ export default function WorkoutScreen() {
   const router = useRouter();
 
   const { units, toDisplayWeight, toKg } = useUnits();
+  const { accentColor, accentTextOn } = useAccent();
   const scheme = useColorScheme();
 
   const [loading, setLoading] = useState(true);
@@ -481,15 +483,19 @@ export default function WorkoutScreen() {
               </View>
             </View>
 
-            <Pressable style={styles.completeButton} onPress={() => onAddSet(ex, derivedDraft)}>
-              <Text style={styles.completeButtonText}>Complete set</Text>
+            <Pressable style={[styles.completeButton, { backgroundColor: accentColor }]} onPress={() => onAddSet(ex, derivedDraft)}>
+              <Text style={[styles.completeButtonText, { color: accentTextOn }]}>Complete set</Text>
             </Pressable>
           </View>
         );
       })}
 
-      <Pressable style={[styles.finishButton, finishing && styles.buttonDisabled]} onPress={onFinish} disabled={finishing}>
-        <Text style={styles.finishButtonText}>{finishing ? 'Finishing…' : 'Finish workout'}</Text>
+      <Pressable
+        style={[styles.finishButton, { backgroundColor: accentColor }, finishing && styles.buttonDisabled]}
+        onPress={onFinish}
+        disabled={finishing}
+      >
+        <Text style={[styles.finishButtonText, { color: accentTextOn }]}>{finishing ? 'Finishing…' : 'Finish workout'}</Text>
       </Pressable>
     </ScrollView>
   );

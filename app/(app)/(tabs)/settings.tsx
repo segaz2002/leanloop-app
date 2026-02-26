@@ -6,6 +6,7 @@ import { useAuth } from '@/src/features/auth/AuthProvider';
 import { useThemePreference } from '@/src/features/settings/ThemePreferenceProvider';
 import { GoalsCard } from '@/src/features/settings/GoalsCard';
 import { useUnits } from '@/src/features/settings/UnitsProvider';
+import { useAccent } from '@/src/features/settings/AccentProvider';
 
 function ThemeModeRow() {
   const { mode, setMode } = useThemePreference();
@@ -28,6 +29,7 @@ function ThemeModeRow() {
 export default function SettingsScreen() {
   const { user, signOut } = useAuth();
   const { units, setUnits } = useUnits();
+  const { accent, setAccent, accentColor, accentTextOn } = useAccent();
 
   return (
     <View style={styles.container}>
@@ -62,6 +64,30 @@ export default function SettingsScreen() {
             onPress={() => setUnits('lb')}
           >
             <Text style={[styles.pillText, units === 'lb' && styles.pillTextActive]}>lb</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Accent</Text>
+        <View style={styles.row}>
+          <Pressable
+            style={[styles.pill, accent === 'teal' && styles.pillActive, accent === 'teal' && { backgroundColor: accentColor, borderColor: accentColor }]}
+            onPress={() => setAccent('teal')}
+          >
+            <Text style={[styles.pillText, accent === 'teal' && styles.pillTextActive, accent === 'teal' && { color: accentTextOn }]}>Teal</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.pill, accent === 'yellow' && styles.pillActive, accent === 'yellow' && { backgroundColor: '#fbbf24', borderColor: '#fbbf24' }]}
+            onPress={() => setAccent('yellow')}
+          >
+            <Text style={[styles.pillText, accent === 'yellow' && { color: '#111827' }]}>Yellow</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.pill, accent === 'pink' && styles.pillActive, accent === 'pink' && { backgroundColor: '#ec4899', borderColor: '#ec4899' }]}
+            onPress={() => setAccent('pink')}
+          >
+            <Text style={[styles.pillText, accent === 'pink' && styles.pillTextActive]}>Pink</Text>
           </Pressable>
         </View>
       </View>
