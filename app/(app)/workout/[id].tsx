@@ -88,6 +88,12 @@ export default function WorkoutScreen() {
     }, [workoutId]),
   );
 
+  // If the user changes unit preference (kg/lb), refresh to reformat last/perf strings.
+  useEffect(() => {
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [units]);
+
   // Load persisted rest timer (if any) when workout changes.
   useEffect(() => {
     (async () => {
