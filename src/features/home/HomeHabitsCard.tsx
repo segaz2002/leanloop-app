@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
@@ -6,6 +6,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { fetchHabitsForDate, upsertHabitsForDate } from '@/src/features/habits/habits.repo';
 import { fetchMyProfile } from '@/src/features/profile/profile.repo';
 import { todayISO } from '@/src/features/progress/progress.repo';
+import { supabase } from '@/src/lib/supabase';
 
 export function HomeHabitsCard() {
   const scheme = useColorScheme();
@@ -18,16 +19,44 @@ export function HomeHabitsCard() {
   const [protein, setProtein] = useState('');
   const [steps, setSteps] = useState('');
   const [saving, setSaving] = useState(false);
+  const [savedTick, setSavedTick] = useState(0);
+
+  const [workoutsThisWeek, setWorkoutsThisWeek] = useState<number | null>(null);
 
   const refresh = async () => {
     setLoading(true);
     try {
       const date = todayISO();
+
+      // Fetch profile + today's habits
       const [profile, habits] = await Promise.all([fetchMyProfile(), fetchHabitsForDate(date)]);
       setProteinGoal(profile.protein_goal_g);
       setStepsGoal(profile.steps_goal);
       setProtein(habits?.protein_g != null ? String(habits.protein_g) : '');
       setSteps(habits?.steps != null ? String(habits.steps) : '');
+
+      // Fetch this week's completed workout count for Quest snippet.
+      // (RLS should scope workouts to the signed-in user.)
+      const now = new Date();
+      const d = new Date(now);
+      const day = (d.getDay() + 6) % 7; // Monday=0
+      d.setDate(d.getDate() - day);
+      d.setHours(0, 0, 0, 0);
+      const weekStartISO = d.toISOString().slice(0, 10);
+      const weekEnd = new Date(d);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      const weekEndISO = weekEnd.toISOString().slice(0, 10);
+
+      const wRes = await supabase
+        .from('workouts')
+        .select('id, completed_at')
+        .eq('status', 'completed')
+        .not('completed_at', 'is', null)
+        .gte('completed_at', `${weekStartISO}T00:00:00.000Z`)
+        .lte('completed_at', `${weekEndISO}T23:59:59.999Z`);
+
+      if (wRes.error) throw wRes.error;
+      setWorkoutsThisWeek((wRes.data ?? []).length);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load habits');
     } finally {
@@ -56,14 +85,32 @@ export function HomeHabitsCard() {
 
     setSaving(true);
     try {
-      await upsertHabitsForDate({ date: todayISO(), protein_g: p, steps: s });
-      Alert.alert('Saved', 'Logged for today.');
+      const saved = await upsertHabitsForDate({ date: todayISO(), protein_g: p, steps: s });
+      setProtein(saved.protein_g != null ? String(saved.protein_g) : '');
+      setSteps(saved.steps != null ? String(saved.steps) : '');
+      setSavedTick((x) => x + 1);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to save');
     } finally {
       setSaving(false);
     }
   };
+
+  const workoutQuest = useMemo(() => {
+    const w = workoutsThisWeek ?? 0;
+    const done = Math.min(w, 3);
+    const extra = Math.max(w - 3, 0);
+    return { w, done, extra };
+  }, [workoutsThisWeek]);
+
+  const proteinNum = protein.trim() === '' ? null : Number(protein);
+  const stepsNum = steps.trim() === '' ? null : Number(steps);
+
+  const showNudge =
+    !loading &&
+    (proteinGoal ?? 0) > 0 &&
+    (stepsGoal ?? 0) > 0 &&
+    ((proteinNum == null || proteinNum === 0) && (stepsNum == null || stepsNum === 0));
 
   return (
     <View style={styles.block}>
@@ -76,6 +123,24 @@ export function HomeHabitsCard() {
           <Text style={[styles.muted, isDark && styles.mutedDark]}>
             Protein goal: {proteinGoal ?? '—'}g · Steps goal: {stepsGoal ?? '—'}
           </Text>
+
+          <Text style={[styles.mini, isDark && styles.mutedDark]}>
+            🎯 3-Workout Quest: {workoutQuest.done}/3{workoutQuest.w >= 3 ? ' • cleared' : ''}
+            {workoutQuest.extra > 0 ? ` • +${workoutQuest.extra} extra` : ''}
+          </Text>
+
+          <Text style={[styles.mini, isDark && styles.mutedDark]}>
+            Today: Protein {proteinNum ?? 0}
+            {proteinGoal ? ` / ${proteinGoal}g` : 'g'} · Steps {stepsNum ?? 0}
+            {stepsGoal ? ` / ${stepsGoal}` : ''}
+            {savedTick > 0 ? ' • Saved' : ''}
+          </Text>
+
+          {showNudge ? (
+            <Text style={[styles.nudge, isDark && styles.mutedDark]}>
+              Small wins count. Rough estimates are totally fine.
+            </Text>
+          ) : null}
 
           <View style={styles.row}>
             <View style={styles.field}>
@@ -117,6 +182,8 @@ const styles = StyleSheet.create({
   textLight: { color: '#e5e7eb' },
   muted: { color: '#334155' },
   mutedDark: { color: '#94a3b8' },
+  mini: { marginTop: 6, fontSize: 12, color: '#475569' },
+  nudge: { marginTop: 8, fontSize: 12 },
   row: { flexDirection: 'row', gap: 12, marginTop: 10 },
   field: { flex: 1 },
   label: { fontSize: 12, marginBottom: 6, color: '#475569' },
