@@ -1,9 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { Text, View } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
+import { Screen } from '@/src/ui/Screen';
+import { Card } from '@/src/ui/Card';
+import { Button } from '@/src/ui/Button';
+import { useAppTheme } from '@/src/theme/useAppTheme';
 import { fetchWeeklyStats, todayISO } from '@/src/features/progress/progress.repo';
 import type { WeeklyStats } from '@/src/features/progress/progress.logic';
 import { fetchHabitsForDate, upsertHabitsForDate, type HabitsDaily } from '@/src/features/habits/habits.repo';
@@ -23,8 +27,9 @@ function gradeLabel(g: WeeklyStats['grade']) {
 export default function ProgressScreen() {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
+  const t = useAppTheme();
   const { units, toDisplayWeight, toKg } = useUnits();
-  const { accentColor, accentTextOn } = useAccent();
+  const { accentColor } = useAccent();
 
   const [loading, setLoading] = useState(true);
   const [weeks, setWeeks] = useState<WeeklyStats[]>([]);
@@ -218,12 +223,7 @@ export default function ProgressScreen() {
   }, [thisWeek, goals, weeklyCheckin?.weight_kg, prevWeeklyCheckin?.weight_kg]);
 
   return (
-    <ScrollView
-      style={[styles.scroll, isDark && styles.scrollDark]}
-      contentContainerStyle={[styles.container, isDark && styles.containerDark]}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-    >
+    <Screen>
       <Text style={[styles.title, isDark && styles.textLight]}>Progress</Text>
       <Text style={[styles.subtitle, isDark && styles.mutedDark]}>Consistency scoreboard (last 4 weeks)</Text>
 
@@ -233,8 +233,8 @@ export default function ProgressScreen() {
         <>
           {thisWeek ? (
             <>
-              <View style={[styles.card, isDark && styles.cardDark]}>
-                <Text style={[styles.cardTitle, isDark && styles.textLight]}>This week</Text>
+              <Card>
+                <Text style={[styles.cardTitle, { color: t.colors.text }]}>This week</Text>
               <View style={styles.badgeRow}>
                 <View style={[styles.badge, styles[`badge_${thisWeek.grade}` as const]]}>
                   <Text style={styles.badgeText}>{gradeLabel(thisWeek.grade)}</Text>
@@ -303,10 +303,10 @@ export default function ProgressScreen() {
                   <View style={[styles.barInner, { backgroundColor: accentColor, width: `${Math.min(thisWeek.stepsDaysHit / 4, 1) * 100}%` }]} />
                 </View>
               </View>
-            </View>
+            </Card>
 
-            <View style={[styles.card, isDark && styles.cardDark]}>
-              <Text style={[styles.cardTitle, isDark && styles.textLight]}>Weekly check-in</Text>
+            <Card style={{ marginTop: 12 }}>
+              <Text style={[styles.cardTitle, { color: t.colors.text }]}>Weekly check-in</Text>
               <Text style={[styles.muted, isDark && styles.mutedDark]}>
                 Week starting {thisWeek.weekStart} • snapshot for your next-week plan
               </Text>
@@ -372,7 +372,7 @@ export default function ProgressScreen() {
                   }
                 }}
               >
-                <Text style={[styles.buttonText, { color: accentTextOn }]}>
+                <Text style={[styles.buttonText, { color: t.colors.accentTextOn }]}>
                   {weeklyCheckin || checkinSavedTick > 0 ? 'Update check-in' : 'Save check-in'}
                 </Text>
               </Pressable>
@@ -392,8 +392,8 @@ export default function ProgressScreen() {
                   </Text>
                   <Text style={[styles.help, isDark && styles.mutedDark]}>{recommendations.reasons.join(' ')}</Text>
 
-                  <Pressable
-                    style={[styles.button, { backgroundColor: accentColor }]}
+                  <Button
+                    title="Apply to my goals"
                     onPress={async () => {
                       try {
                         await updateMyGoals({ protein_goal_g: recommendations.nextProtein, steps_goal: recommendations.nextSteps });
@@ -404,21 +404,20 @@ export default function ProgressScreen() {
                         Alert.alert('Error', e?.message ?? 'Failed to update goals');
                       }
                     }}
-                  >
-                    <Text style={[styles.buttonText, { color: accentTextOn }]}>Apply to my goals</Text>
-                  </Pressable>
+                    style={{ marginTop: 12 }}
+                  />
 
                   {goalsAppliedTick > 0 ? (
                     <Text style={[styles.helpSmall, isDark && styles.mutedDark]}>Applied. Check Home/Settings to confirm.</Text>
                   ) : null}
                 </View>
               ) : null}
-            </View>
+            </Card>
           </>
           ) : null}
 
-          <View style={[styles.card, isDark && styles.cardDark]}>
-            <Text style={[styles.cardTitle, isDark && styles.textLight]}>Log today</Text>
+          <Card style={{ marginTop: 12 }}>
+            <Text style={[styles.cardTitle, { color: t.colors.text }]}>Log today</Text>
             <Text style={[styles.muted, isDark && styles.mutedDark]}>
               Today: Protein {todayHabits?.protein_g ?? 0}
               {goals?.protein_goal_g ? ` / ${goals.protein_goal_g}g` : 'g'} · Steps {todayHabits?.steps ?? 0}
@@ -449,13 +448,11 @@ export default function ProgressScreen() {
                 />
               </View>
             </View>
-            <Pressable style={[styles.button, { backgroundColor: accentColor }]} onPress={onLogToday}>
-              <Text style={[styles.buttonText, { color: accentTextOn }]}>Save</Text>
-            </Pressable>
-          </View>
+            <Button title="Save" onPress={onLogToday} style={{ marginTop: 12 }} />
+          </Card>
 
-          <View style={[styles.card, isDark && styles.cardDark]}>
-            <Text style={[styles.cardTitle, isDark && styles.textLight]}>Weight</Text>
+          <Card style={{ marginTop: 12 }}>
+            <Text style={[styles.cardTitle, { color: t.colors.text }]}>Weight</Text>
             <Text style={[styles.muted, isDark && styles.mutedDark]}>
               Today: {todayWeight?.weight_kg != null ? `${toDisplayWeight(Number(todayWeight.weight_kg)).toFixed(1).replace(/\.0$/, '')} ${units}` : '—'}
             </Text>
@@ -472,9 +469,7 @@ export default function ProgressScreen() {
                 />
               </View>
             </View>
-            <Pressable style={[styles.button, { backgroundColor: accentColor }]} onPress={onSaveWeight}>
-              <Text style={[styles.buttonText, { color: accentTextOn }]}>Save weight</Text>
-            </Pressable>
+            <Button title="Save weight" onPress={onSaveWeight} style={{ marginTop: 12 }} />
 
             {weightHistory.length ? (
               <Text style={[styles.help, isDark && styles.mutedDark]}>
@@ -486,10 +481,10 @@ export default function ProgressScreen() {
             ) : (
               <Text style={[styles.help, isDark && styles.mutedDark]}>Log a few weigh-ins to see a trend here.</Text>
             )}
-          </View>
+          </Card>
 
-          <View style={[styles.card, isDark && styles.cardDark]}>
-            <Text style={[styles.cardTitle, isDark && styles.textLight]}>Last 4 weeks</Text>
+          <Card style={{ marginTop: 12 }}>
+            <Text style={[styles.cardTitle, { color: t.colors.text }]}>Last 4 weeks</Text>
 
             <View style={[styles.weekRow, styles.weekHeaderRow]}>
               <Text style={[styles.weekLabel, isDark && styles.textLight]}>Week</Text>
@@ -511,10 +506,10 @@ export default function ProgressScreen() {
             <Text style={[styles.help, isDark && styles.mutedDark]}>
               Legend: W=workouts completed • P≥=protein goal days • S≥=steps goal days
             </Text>
-          </View>
+          </Card>
         </>
       )}
-    </ScrollView>
+    </Screen>
   );
 }
 
