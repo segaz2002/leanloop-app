@@ -9,6 +9,7 @@ import type { WeeklyStats } from '@/src/features/progress/progress.logic';
 import { fetchHabitsForDate, upsertHabitsForDate, type HabitsDaily } from '@/src/features/habits/habits.repo';
 import { fetchWeightForDate, fetchWeightRange, upsertWeightForDate, type WeightEntry } from '@/src/features/weight/weight.repo';
 import { useUnits } from '@/src/features/settings/UnitsProvider';
+import { fetchWeeklyCheckin, upsertWeeklyCheckin, type WeeklyCheckin } from '@/src/features/checkin/checkin.repo';
 
 function gradeLabel(g: WeeklyStats['grade']) {
   if (g === 'gold') return 'Gold';
@@ -34,6 +35,10 @@ export default function ProgressScreen() {
   const [weight, setWeight] = useState('');
   const [todayWeight, setTodayWeight] = useState<Pick<WeightEntry, 'weight_kg'> | null>(null);
   const [weightHistory, setWeightHistory] = useState<WeightEntry[]>([]);
+
+  const [checkinNote, setCheckinNote] = useState('');
+  const [weeklyCheckin, setWeeklyCheckin] = useState<WeeklyCheckin | null>(null);
+  const [checkinSavedTick, setCheckinSavedTick] = useState(0);
 
   const thisWeek = useMemo(() => weeks[weeks.length - 1] ?? null, [weeks]);
 
@@ -75,6 +80,19 @@ export default function ProgressScreen() {
         setTodayWeight(null);
         setWeightHistory([]);
         setWeight('');
+      }
+
+      // Weekly check-in is optional until the DB migration is applied.
+      try {
+        const ws = res.weeks[res.weeks.length - 1]?.weekStart;
+        if (ws) {
+          const c = await fetchWeeklyCheckin(ws);
+          setWeeklyCheckin(c);
+          setCheckinNote(c?.note ?? '');
+        }
+      } catch {
+        setWeeklyCheckin(null);
+        setCheckinNote('');
       }
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load progress');
@@ -151,8 +169,9 @@ export default function ProgressScreen() {
       ) : (
         <>
           {thisWeek ? (
-            <View style={[styles.card, isDark && styles.cardDark]}>
-              <Text style={[styles.cardTitle, isDark && styles.textLight]}>This week</Text>
+            <>
+              <View style={[styles.card, isDark && styles.cardDark]}>
+                <Text style={[styles.cardTitle, isDark && styles.textLight]}>This week</Text>
               <View style={styles.badgeRow}>
                 <View style={[styles.badge, styles[`badge_${thisWeek.grade}` as const]]}>
                   <Text style={styles.badgeText}>{gradeLabel(thisWeek.grade)}</Text>
@@ -206,6 +225,81 @@ export default function ProgressScreen() {
                 </View>
               </View>
             </View>
+
+            <View style={[styles.card, isDark && styles.cardDark]}>
+              <Text style={[styles.cardTitle, isDark && styles.textLight]}>Weekly check-in</Text>
+              <Text style={[styles.muted, isDark && styles.mutedDark]}>
+                Week starting {thisWeek.weekStart} • snapshot for your next-week plan
+              </Text>
+
+              <View style={styles.row}>
+                <View style={styles.field}>
+                  <Text style={[styles.label, isDark && styles.mutedDark]}>End-of-week weight ({units})</Text>
+                  <TextInput
+                    value={weight}
+                    onChangeText={setWeight}
+                    keyboardType="numeric"
+                    placeholder={units === 'lb' ? '180' : '80'}
+                    placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
+                    style={[styles.input, isDark && styles.inputDark]}
+                  />
+                </View>
+              </View>
+
+              <Text style={[styles.mini, isDark && styles.mutedDark]}>
+                Logged this week: Workouts {thisWeek.workoutsCompleted} • Protein ≥ goal {thisWeek.proteinDaysHit} • Steps ≥ goal {thisWeek.stepsDaysHit}
+              </Text>
+
+              <View style={styles.field}>
+                <Text style={[styles.label, isDark && styles.mutedDark]}>Note (optional)</Text>
+                <TextInput
+                  value={checkinNote}
+                  onChangeText={setCheckinNote}
+                  placeholder="How did it go this week?"
+                  placeholderTextColor={isDark ? '#94a3b8' : '#64748b'}
+                  style={[styles.input, isDark && styles.inputDark]}
+                />
+              </View>
+
+              <Pressable
+                style={styles.button}
+                onPress={async () => {
+                  const w = weight.trim() === '' ? null : Number(weight);
+                  if (w !== null && (!Number.isFinite(w) || w <= 0 || w > 2000)) {
+                    Alert.alert('Invalid weight', `Enter weight in ${units}`);
+                    return;
+                  }
+                  try {
+                    const weightKg = w === null ? null : Number(toKg(w).toFixed(3));
+                    const saved = await upsertWeeklyCheckin({
+                      week_start: thisWeek.weekStart,
+                      weight_kg: weightKg,
+                      workouts_completed: thisWeek.workoutsCompleted,
+                      protein_goal_days: thisWeek.proteinDaysHit,
+                      steps_goal_days: thisWeek.stepsDaysHit,
+                      note: checkinNote.trim() === '' ? null : checkinNote.trim(),
+                    });
+                    setWeeklyCheckin(saved);
+                    setCheckinSavedTick((x) => x + 1);
+                    Alert.alert('Saved', 'Weekly check-in saved.');
+                  } catch (e: any) {
+                    Alert.alert('Error', e?.message ?? 'Failed to save check-in');
+                  }
+                }}
+              >
+                <Text style={styles.buttonText}>
+                  {weeklyCheckin || checkinSavedTick > 0 ? 'Update check-in' : 'Save check-in'}
+                </Text>
+              </Pressable>
+
+              {weeklyCheckin ? (
+                <Text style={[styles.help, isDark && styles.mutedDark]}>
+                  Saved: {weeklyCheckin.weight_kg != null ? `${toDisplayWeight(Number(weeklyCheckin.weight_kg)).toFixed(1).replace(/\.0$/, '')} ${units}` : '—'}
+                  {weeklyCheckin.note ? ` • “${weeklyCheckin.note}”` : ''}
+                </Text>
+              ) : null}
+            </View>
+          </>
           ) : null}
 
           <View style={[styles.card, isDark && styles.cardDark]}>
