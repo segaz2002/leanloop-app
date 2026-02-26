@@ -6,7 +6,7 @@ import { Text, View } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
 import { fetchWeeklyStats, todayISO } from '@/src/features/progress/progress.repo';
 import type { WeeklyStats } from '@/src/features/progress/progress.logic';
-import { upsertHabitsForDate } from '@/src/features/habits/habits.repo';
+import { fetchHabitsForDate, upsertHabitsForDate, type HabitsDaily } from '@/src/features/habits/habits.repo';
 
 function gradeLabel(g: WeeklyStats['grade']) {
   if (g === 'gold') return 'Gold';
@@ -25,15 +25,23 @@ export default function ProgressScreen() {
 
   const [protein, setProtein] = useState('');
   const [steps, setSteps] = useState('');
+  const [todayHabits, setTodayHabits] = useState<Pick<HabitsDaily, 'protein_g' | 'steps'> | null>(null);
+  const [savedTick, setSavedTick] = useState(0);
 
   const thisWeek = useMemo(() => weeks[weeks.length - 1] ?? null, [weeks]);
 
   const refresh = async () => {
     setLoading(true);
     try {
-      const res = await fetchWeeklyStats(4);
+      const date = todayISO();
+      const [res, today] = await Promise.all([fetchWeeklyStats(4), fetchHabitsForDate(date)]);
       setGoals(res.profile);
       setWeeks(res.weeks);
+      setTodayHabits(today ? { protein_g: today.protein_g, steps: today.steps } : null);
+
+      // Prefill inputs from today's saved values (helps confirm the save worked)
+      setProtein(today?.protein_g != null ? String(today.protein_g) : '');
+      setSteps(today?.steps != null ? String(today.steps) : '');
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load progress');
     } finally {
@@ -63,9 +71,11 @@ export default function ProgressScreen() {
     }
 
     try {
-      await upsertHabitsForDate({ date: todayISO(), protein_g: p, steps: s });
-      setProtein('');
-      setSteps('');
+      const saved = await upsertHabitsForDate({ date: todayISO(), protein_g: p, steps: s });
+      setTodayHabits({ protein_g: saved.protein_g, steps: saved.steps });
+      setProtein(saved.protein_g != null ? String(saved.protein_g) : '');
+      setSteps(saved.steps != null ? String(saved.steps) : '');
+      setSavedTick((x) => x + 1);
       await refresh();
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to save habits');
@@ -121,7 +131,7 @@ export default function ProgressScreen() {
 
               <View style={styles.metricBlock}>
                 <Text style={[styles.line, isDark && styles.textLight]}>
-                  Protein days: {thisWeek.proteinDaysHit} / 4 {goals ? `(goal ${goals.protein_goal_g}g)` : ''}
+                  Protein goal days (≥ goal): {thisWeek.proteinDaysHit} / 4 {goals ? `(goal ${goals.protein_goal_g}g)` : ''}
                 </Text>
                 <View style={styles.barOuter}>
                   <View style={[styles.barInner, { width: `${Math.min(thisWeek.proteinDaysHit / 4, 1) * 100}%` }]} />
@@ -130,7 +140,7 @@ export default function ProgressScreen() {
 
               <View style={styles.metricBlock}>
                 <Text style={[styles.line, isDark && styles.textLight]}>
-                  Steps days: {thisWeek.stepsDaysHit} / 4 {goals ? `(goal ${goals.steps_goal})` : ''}
+                  Steps goal days (≥ goal): {thisWeek.stepsDaysHit} / 4 {goals ? `(goal ${goals.steps_goal})` : ''}
                 </Text>
                 <View style={styles.barOuter}>
                   <View style={[styles.barInner, { width: `${Math.min(thisWeek.stepsDaysHit / 4, 1) * 100}%` }]} />
@@ -141,6 +151,12 @@ export default function ProgressScreen() {
 
           <View style={[styles.card, isDark && styles.cardDark]}>
             <Text style={[styles.cardTitle, isDark && styles.textLight]}>Log today</Text>
+            <Text style={[styles.muted, isDark && styles.mutedDark]}>
+              Today: Protein {todayHabits?.protein_g ?? 0}
+              {goals?.protein_goal_g ? ` / ${goals.protein_goal_g}g` : 'g'} · Steps {todayHabits?.steps ?? 0}
+              {goals?.steps_goal ? ` / ${goals.steps_goal}` : ''}
+              {savedTick > 0 ? ' • Saved' : ''}
+            </Text>
             <View style={styles.row}>
               <View style={styles.field}>
                 <Text style={[styles.label, isDark && styles.mutedDark]}>Protein (g)</Text>
