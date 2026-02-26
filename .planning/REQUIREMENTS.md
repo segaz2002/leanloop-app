@@ -6,21 +6,21 @@
 ## v1 Requirements
 
 ### Authentication (AUTH)
-- [ ] **AUTH-01**: User can sign up / log in via email + password.
-- [ ] **AUTH-02**: User session persists across app restarts.
+- [x] **AUTH-01**: User can sign up / log in via email + password.
+- [x] **AUTH-02**: User session persists across app restarts.
 
 ### Training Plan (TRN)
-- [ ] **TRN-01**: App provides a 3-day full body program (A/B/C) for an 8–12 week block.
-- [ ] **TRN-02**: Each exercise has prescribed sets/reps and progression guidance.
+- [x] **TRN-01**: App provides a 3-day full body program (A/B/C) for an 8–12 week block.
+- [x] **TRN-02**: Each exercise has prescribed sets/reps and progression guidance (v1 rules).
 - [ ] **TRN-03**: App supports exercise substitutions (basic).
 
 ### Workout Execution & Logging (LOG)
-- [ ] **LOG-01**: User can log sets (weight/reps) quickly.
-- [ ] **LOG-02**: Rest timer is available per set/exercise.
-- [ ] **LOG-03**: App shows previous performance for the same exercise.
+- [x] **LOG-01**: User can log sets (weight/reps) quickly.
+- [x] **LOG-02**: Rest timer is available per set/exercise (persists across background/resume).
+- [x] **LOG-03**: App shows previous performance for the same exercise.
 
 ### Macro-lite Fat Loss Loop (CUT)
-- [ ] **CUT-01**: App sets a protein target and steps target.
+- [x] **CUT-01**: App sets a protein target and steps target.
 - [ ] **CUT-02**: Weekly check-in captures weight and adherence.
 - [ ] **CUT-03**: Weekly adjustment suggests next-week targets (rules-based v1).
 

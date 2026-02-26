@@ -8,8 +8,8 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 
 ## Current Focus (Today)
 
-**Phase:** MVP build (Auth + Workouts + Progress)
-**Today’s objective:** Tighten the **consistency loop** (goals + quick habit logging + clearer Progress copy) and QA iOS/web.
+**Phase:** Phase 3 (Weekly check-in + adaptation)
+**Today’s objective:** Final sweep QA complete → ship v1.1 → begin v1.2 work (weekly check-in, weight trend, target adjustment rules).
 
 ## Current Position
 
@@ -24,6 +24,7 @@ Last activity: 2026-02-25 — Workout logging UX + Exercise detail + Progress sc
 
 ## Next Up (After Today)
 
-- Home: show quest status + quick log summary (reduce tab-hopping)
-- Progress: weekly recap card + gentle celebration (non-spammy)
+- Weekly check-in flow (weight + adherence)
+- Weight trend chart (simple, honest)
+- Rules-based adjustments for next-week protein/steps
 - Subscription/paywall plan
