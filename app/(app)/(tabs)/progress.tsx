@@ -47,12 +47,7 @@ export default function ProgressScreen() {
       from.setDate(from.getDate() - 28);
       const fromISO = from.toISOString().slice(0, 10);
 
-      const [res, today, wToday, wRange] = await Promise.all([
-        fetchWeeklyStats(4),
-        fetchHabitsForDate(date),
-        fetchWeightForDate(date),
-        fetchWeightRange({ from: fromISO, to: date }),
-      ]);
+      const [res, today] = await Promise.all([fetchWeeklyStats(4), fetchHabitsForDate(date)]);
 
       setGoals(res.profile);
       setWeeks(res.weeks);
@@ -62,9 +57,25 @@ export default function ProgressScreen() {
       setProtein(today?.protein_g != null ? String(today.protein_g) : '');
       setSteps(today?.steps != null ? String(today.steps) : '');
 
-      setTodayWeight(wToday ? { weight_kg: wToday.weight_kg } : null);
-      setWeightHistory(wRange);
-      setWeight(wToday?.weight_kg != null ? String(toDisplayWeight(Number(wToday.weight_kg)).toFixed(1).replace(/\.0$/, '')) : '');
+      // Weight tracking is optional until the DB migration is applied.
+      try {
+        const [wToday, wRange] = await Promise.all([
+          fetchWeightForDate(date),
+          fetchWeightRange({ from: fromISO, to: date }),
+        ]);
+        setTodayWeight(wToday ? { weight_kg: wToday.weight_kg } : null);
+        setWeightHistory(wRange);
+        setWeight(
+          wToday?.weight_kg != null
+            ? String(toDisplayWeight(Number(wToday.weight_kg)).toFixed(1).replace(/\.0$/, ''))
+            : '',
+        );
+      } catch {
+        // If the table doesn't exist yet (migration not applied), keep weight UI empty.
+        setTodayWeight(null);
+        setWeightHistory([]);
+        setWeight('');
+      }
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load progress');
     } finally {
