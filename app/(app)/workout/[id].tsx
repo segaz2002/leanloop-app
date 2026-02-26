@@ -1,6 +1,8 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { Text, View } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -30,6 +32,8 @@ export default function WorkoutScreen() {
   const [lastPerf, setLastPerf] = useState<Record<string, string>>({});
 
   const [restSeconds, setRestSeconds] = useState<number>(0);
+  const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
+  const restStorageKey = useMemo(() => `restEndsAt:${workoutId}`, [workoutId]);
   const [banner, setBanner] = useState<string | null>(null);
   const [undo, setUndo] = useState<WorkoutSet | null>(null);
   const [editingSetId, setEditingSetId] = useState<string | null>(null);
@@ -75,18 +79,74 @@ export default function WorkoutScreen() {
     }
   };
 
-  useEffect(() => {
-    refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workoutId]);
+  useFocusEffect(
+    React.useCallback(() => {
+      refresh();
+      // no cleanup
+      return undefined;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [workoutId]),
+  );
 
+  // Load persisted rest timer (if any) when workout changes.
   useEffect(() => {
-    if (restSeconds <= 0) return;
-    const t = setInterval(() => {
-      setRestSeconds((s) => (s > 0 ? s - 1 : 0));
-    }, 1000);
+    (async () => {
+      try {
+        const v = await AsyncStorage.getItem(restStorageKey);
+        if (!v) {
+          setRestEndsAt(null);
+          setRestSeconds(0);
+          return;
+        }
+        const n = Number(v);
+        if (!Number.isFinite(n)) {
+          await AsyncStorage.removeItem(restStorageKey);
+          setRestEndsAt(null);
+          setRestSeconds(0);
+          return;
+        }
+        if (n <= Date.now()) {
+          await AsyncStorage.removeItem(restStorageKey);
+          setRestEndsAt(null);
+          setRestSeconds(0);
+          return;
+        }
+        setRestEndsAt(n);
+      } catch {
+        // ignore
+      }
+    })();
+  }, [restStorageKey]);
+
+  // Persist rest timer changes.
+  useEffect(() => {
+    (async () => {
+      try {
+        if (restEndsAt) await AsyncStorage.setItem(restStorageKey, String(restEndsAt));
+        else await AsyncStorage.removeItem(restStorageKey);
+      } catch {
+        // ignore
+      }
+    })();
+  }, [restEndsAt, restStorageKey]);
+
+  // Rest timer: derive seconds left from an absolute end timestamp.
+  useEffect(() => {
+    if (!restEndsAt) {
+      setRestSeconds(0);
+      return;
+    }
+
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((restEndsAt - Date.now()) / 1000));
+      setRestSeconds(left);
+      if (left <= 0) setRestEndsAt(null);
+    };
+
+    tick();
+    const t = setInterval(tick, 250);
     return () => clearInterval(t);
-  }, [restSeconds]);
+  }, [restEndsAt]);
 
   const onAddSet = async (ex: WorkoutExercise, draft: SetDraft) => {
     const reps = Number(draft.reps);
@@ -123,8 +183,8 @@ export default function WorkoutScreen() {
         },
       }));
 
-      // Auto-start rest timer.
-      setRestSeconds(REST_SECONDS_DEFAULT);
+      // Auto-start rest timer (persisted + robust across background/resume).
+      setRestEndsAt(Date.now() + REST_SECONDS_DEFAULT * 1000);
     } catch (e: any) {
       const msg = e?.message ?? 'Failed to add set';
       setBanner(msg);
@@ -273,13 +333,13 @@ export default function WorkoutScreen() {
                   Rest {Math.floor(restSeconds / 60)}:{String(restSeconds % 60).padStart(2, '0')}
                 </Text>
                 <Pressable
-                  onPress={() => setRestSeconds((s) => s + 15)}
+                  onPress={() => setRestEndsAt((t) => (t ? t + 15_000 : Date.now() + 15_000))}
                   style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }}
                 >
                   <Text style={{ fontWeight: '800', color: isDark ? '#e5e7eb' : '#0f172a' }}>+15</Text>
                 </Pressable>
                 <Pressable
-                  onPress={() => setRestSeconds(0)}
+                  onPress={() => setRestEndsAt(null)}
                   style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)' }}
                 >
                   <Text style={{ fontWeight: '800', color: isDark ? '#e5e7eb' : '#0f172a' }}>Skip</Text>
