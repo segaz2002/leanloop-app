@@ -1,17 +1,15 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet } from 'react-native';
+import { Alert } from 'react-native';
 
-import { Text } from '@/components/Themed';
 import { abandonWorkout, fetchActiveWorkout, startWorkout, type Workout } from '@/src/features/workout/workout.repo';
 import { Screen } from '@/src/ui/Screen';
 import { Card } from '@/src/ui/Card';
 import { Button } from '@/src/ui/Button';
-import { useAppTheme } from '@/src/theme/useAppTheme';
+import { H1, H2, Body } from '@/src/ui/Typography';
 
 export default function WorkoutsScreen() {
   const router = useRouter();
-  const t = useAppTheme();
   const [starting, setStarting] = useState<null | 'A' | 'B' | 'C'>(null);
   const [active, setActive] = useState<Workout | null>(null);
 
@@ -72,32 +70,25 @@ export default function WorkoutsScreen() {
 
   return (
     <Screen>
-      <Text style={[styles.title, { color: t.colors.text }]}>Workouts</Text>
-      <Text style={[styles.subtitle, { color: t.colors.muted }]}>Start a session.</Text>
+      <H1>Workouts</H1>
+      <Body muted style={{ marginBottom: 16 }}>Start a session.</Body>
 
       {active ? (
         <Card>
-          <Text style={[styles.cardTitle, { color: t.colors.text }]}>In progress</Text>
-          <Text style={{ color: t.colors.textSecondary }}>Workout {active.day_code} is unfinished.</Text>
-          <Button title="Resume workout" onPress={() => router.push(`/workout/${active.id}`)} />
+          <H2>In progress</H2>
+          <Body secondary>Workout {active.day_code} is unfinished.</Body>
+          <Button title="Resume workout" onPress={() => router.push(`/workout/${active.id}`)} style={{ marginTop: 10 }} />
         </Card>
       ) : null}
 
       <Card style={{ marginTop: 12 }}>
-        <Text style={[styles.cardTitle, { color: t.colors.text }]}>This week</Text>
+        <H2>This week</H2>
         <Button title="Start Workout A" onPress={() => start('A')} disabled={starting !== null} />
         <Button title="Start Workout B" onPress={() => start('B')} disabled={starting !== null} style={{ marginTop: 10 }} />
         <Button title="Start Workout C" onPress={() => start('C')} disabled={starting !== null} style={{ marginTop: 10 }} />
       </Card>
 
-      <Text style={[styles.muted, { color: t.colors.muted }]}>History & scheduling come next.</Text>
+      <Body muted style={{ marginTop: 12 }}>History & scheduling come next.</Body>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  title: { fontSize: 22, fontWeight: '900', marginBottom: 6 },
-  subtitle: { marginBottom: 16 },
-  cardTitle: { fontWeight: '900', marginBottom: 10 },
-  muted: { marginTop: 12 },
-});

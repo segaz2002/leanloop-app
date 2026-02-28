@@ -18,16 +18,23 @@ Ship a beginner-friendly lifting + fat-loss loop app with subscription, then ite
 |---|---|
 | 1 | ✅ Done (Auth + navigation) |
 | 2 | ✅ Done (A/B/C plan + workout execution + logging) |
-| 3 | 🟡 In progress (weight logging + weekly check-in shipped; weight trend + refined adjustments next) |
-| 4 | ⬜ Not started |
+| 3 | ✅ Done (weight logging, weekly check-in, adjustment rules, exercise substitutions, design system) |
+| 4 | 🟡 Next (Subscription + Paywall) |
 | 5 | ⬜ Not started |
 
 ## Releases
 
 - ✅ **v1.0 MVP**: Auth, workouts (A/B/C), logging UX, progress scoreboard, habits (protein/steps)
 - ✅ **v1.1**: QA/polish (progress clarity, scroll/refresh, rest timer persistence, unit toggle propagation)
-- 🟡 **v1.2 (in progress)**: Weight logging + Weekly check-in + rules-based target suggestions + UI theme system refactor
-  - Added text-first weight trend + **sparkline**
-  - Default weekly suggestions now support **maintenance** (goal picker TBD)
-- 🔜 **v1.3 (next)**: Goal picker (fat loss/maintenance/lean gain) + stronger weekly adjustment rules per goal + substitutions v1
+- ✅ **v1.2**: Weight logging + Weekly check-in + rules-based target suggestions + UI theme system refactor
+  - Weight sparkline + 7-day trend text
+  - Weekly adjustment rules (weight delta + adherence, deterministic)
+  - Exercise substitution picker (option pills per exercise in workout screen)
+  - Full design system migration: Themed.View removed, all screens on Typography + useAppTheme
+- ✅ **v1.3**: Goal picker (fat loss/maintenance/lean gain) + per-goal adjustment rules + substitution persistence
+  - `GoalProvider` (AsyncStorage-backed context, default maintenance)
+  - `computeAdjustments()` extracted to `adjustment.logic.ts` — fat loss / lean gain / maintenance rules
+  - Goal label shown in "Next week suggestion" card
+  - Substitution selections persisted to AsyncStorage per workout
+- 🔜 **v1.4 (next)**: Subscription + Paywall (Phase 4)
 

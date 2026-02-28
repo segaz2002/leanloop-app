@@ -2,13 +2,12 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, StyleSheet } from 'react-native';
 
-import { Text } from '@/components/Themed';
 import { HomeHabitsCard } from '@/src/features/home/HomeHabitsCard';
 import { useAccent } from '@/src/features/settings/AccentProvider';
 import { Screen } from '@/src/ui/Screen';
 import { Card } from '@/src/ui/Card';
 import { Button } from '@/src/ui/Button';
-import { useAppTheme } from '@/src/theme/useAppTheme';
+import { H1, Body } from '@/src/ui/Typography';
 import {
   abandonWorkout,
   fetchActiveWorkout,
@@ -28,9 +27,6 @@ function nextDayFromLast(last: Workout | null): DayCode {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const t = useAppTheme();
-
-  // Accent is now used by shared UI primitives.
   useAccent();
 
   const [starting, setStarting] = useState(false);
@@ -51,7 +47,6 @@ export default function HomeScreen() {
 
   useEffect(() => {
     refresh();
-    // refresh on focus (cheap approach: on mount only for now)
   }, []);
 
   const onPrimary = async () => {
@@ -102,20 +97,24 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <Text style={[styles.title, { color: t.colors.text }]}>LeanLoop</Text>
-      <Text style={[styles.subtitle, { color: t.colors.muted }]}>Your weekly plan that adapts.</Text>
+      <H1>LeanLoop</H1>
+      <Body muted style={{ marginBottom: 16 }}>Your weekly plan that adapts.</Body>
 
       <Card>
-        <Text style={[styles.cardTitle, { color: t.colors.text }]}>Today</Text>
-        <Text style={{ color: t.colors.textSecondary }}>
+        <Body style={{ fontWeight: '900', marginBottom: 8 }}>Today</Body>
+        <Body secondary>
           {active ? `Workout in progress: ${active.day_code}` : `Next up: Workout ${nextUp}`}
-        </Text>
+        </Body>
 
-        <Button title={starting ? 'Starting…' : active ? 'Resume workout' : "Start today’s workout"} onPress={onPrimary} disabled={starting} />
+        <Button
+          title={starting ? 'Starting\u2026' : active ? 'Resume workout' : "Start today's workout"}
+          onPress={onPrimary}
+          disabled={starting}
+        />
 
         {active ? (
           <Pressable style={styles.secondaryButton} onPress={onStartNew}>
-            <Text style={[styles.secondaryButtonText, { color: t.colors.text }]}>Start new workout</Text>
+            <Body style={{ fontWeight: '800', textAlign: 'center' }}>Start new workout</Body>
           </Pressable>
         ) : null}
       </Card>
@@ -128,39 +127,6 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  subtitle: {
-    opacity: 0.8,
-    marginBottom: 16,
-  },
-  card: {
-    padding: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.08)',
-    marginBottom: 12,
-  },
-  cardTitle: {
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  primaryButton: {
-    marginTop: 12,
-    backgroundColor: '#111827',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  buttonDisabled: { opacity: 0.6 },
-  primaryButtonText: { color: 'white', fontWeight: '800' },
   secondaryButton: {
     marginTop: 10,
     paddingVertical: 10,
@@ -169,5 +135,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.15)',
   },
-  secondaryButtonText: { fontWeight: '800' },
 });

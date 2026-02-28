@@ -17,6 +17,8 @@ import { useUnits } from '@/src/features/settings/UnitsProvider';
 import { fetchWeeklyCheckin, upsertWeeklyCheckin, type WeeklyCheckin } from '@/src/features/checkin/checkin.repo';
 import { updateMyGoals } from '@/src/features/profile/profile.repo';
 import { useAccent } from '@/src/features/settings/AccentProvider';
+import { useGoal } from '@/src/features/settings/GoalProvider';
+import { computeAdjustments } from '@/src/features/checkin/adjustment.logic';
 
 function gradeLabel(g: WeeklyStats['grade']) {
   if (g === 'gold') return 'Gold';
@@ -29,6 +31,7 @@ export default function ProgressScreen() {
   const t = useAppTheme();
   const { units, toDisplayWeight, toKg } = useUnits();
   const { accentColor } = useAccent();
+  const { goal } = useGoal();
 
   const [loading, setLoading] = useState(true);
   const [weeks, setWeeks] = useState<WeeklyStats[]>([]);
@@ -184,67 +187,14 @@ export default function ProgressScreen() {
 
   const recommendations = useMemo(() => {
     if (!thisWeek || !goals) return null;
-
-    // Default goal: maintenance (per user preference; goal picker can come later)
-    const currentSteps = goals.steps_goal;
-    const currentProtein = goals.protein_goal_g;
-
-    const currKg = weeklyCheckin?.weight_kg ?? null;
-    const prevKg = prevWeeklyCheckin?.weight_kg ?? null;
-    const deltaKg = currKg != null && prevKg != null ? currKg - prevKg : null;
-
-    const stepsHit = thisWeek.stepsDaysHit;
-    const proteinHit = thisWeek.proteinDaysHit;
-    const workouts = thisWeek.workoutsCompleted;
-
-    let nextSteps = currentSteps;
-    let nextProtein = currentProtein;
-    const reasons: string[] = [];
-
-    const adherenceGood = workouts >= 3 || stepsHit >= 3;
-    const adherenceLow = workouts <= 1 && stepsHit <= 1;
-
-    // Steps adjustment rules (maintenance): keep weight within a small deadband.
-    // Deadband: ±0.25% bodyweight/week (approx).
-    if (deltaKg != null && prevKg != null && prevKg > 0) {
-      const deadbandKg = prevKg * 0.0025;
-      if (Math.abs(deltaKg) <= deadbandKg) {
-        reasons.push('Weight is within the maintenance range → keep steps the same.');
-      } else if (deltaKg > deadbandKg) {
-        if (adherenceGood) {
-          nextSteps = Math.min(20000, currentSteps + 1000);
-          reasons.push('Weight is drifting up and adherence is good → +1000 steps/day.');
-        } else {
-          reasons.push('Weight is drifting up → focus on consistency first (keep steps).');
-        }
-      } else {
-        nextSteps = Math.max(3000, currentSteps - 500);
-        reasons.push('Weight is drifting down → -500 steps/day to maintain.');
-      }
-    } else {
-      // No weight delta yet: adjust based on difficulty
-      if (stepsHit <= 1 && currentSteps > 3000) {
-        nextSteps = Math.max(3000, currentSteps - 500);
-        reasons.push('Steps goal was hard to hit → -500 steps/day to make it doable.');
-      } else {
-        reasons.push('Keep steps goal the same for now.');
-      }
-    }
-
-    // Protein adjustment rules (maintenance): mostly keep stable; only adjust for consistency.
-    if (proteinHit <= 1 && currentProtein > 80) {
-      nextProtein = Math.max(80, currentProtein - 10);
-      reasons.push('Protein goal was hard to hit → -10g to build consistency.');
-    } else {
-      reasons.push('Keep protein goal the same.');
-    }
-
-    if (adherenceLow) {
-      nextSteps = Math.min(nextSteps, currentSteps);
-    }
-
-    return { nextSteps, nextProtein, deltaKg, reasons };
-  }, [thisWeek, goals, weeklyCheckin?.weight_kg, prevWeeklyCheckin?.weight_kg]);
+    return computeAdjustments({
+      thisWeek,
+      goals,
+      currKg: weeklyCheckin?.weight_kg != null ? Number(weeklyCheckin.weight_kg) : null,
+      prevKg: prevWeeklyCheckin?.weight_kg != null ? Number(prevWeeklyCheckin.weight_kg) : null,
+      goal,
+    });
+  }, [thisWeek, goals, weeklyCheckin?.weight_kg, prevWeeklyCheckin?.weight_kg, goal]);
 
   const barTrackColor = t.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(15, 23, 42, 0.10)';
 
@@ -426,6 +376,9 @@ export default function ProgressScreen() {
                 {recommendations ? (
                   <View style={{ marginTop: 12 }}>
                     <H2>Next week suggestion</H2>
+                    <Body muted style={{ fontSize: 12, marginBottom: 2 }}>
+                      Goal: {goal === 'fat_loss' ? 'Fat loss' : goal === 'lean_gain' ? 'Lean gain' : 'Maintenance'}
+                    </Body>
                     <Body muted>
                       Protein: {recommendations.nextProtein}g/day · Steps: {recommendations.nextSteps}/day
                     </Body>

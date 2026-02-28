@@ -6,10 +6,12 @@ import { useThemePreference } from '@/src/features/settings/ThemePreferenceProvi
 import { GoalsCard } from '@/src/features/settings/GoalsCard';
 import { useUnits } from '@/src/features/settings/UnitsProvider';
 import { useAccent } from '@/src/features/settings/AccentProvider';
+import { useGoal } from '@/src/features/settings/GoalProvider';
 import { Screen } from '@/src/ui/Screen';
 import { Card } from '@/src/ui/Card';
 import { Button } from '@/src/ui/Button';
 import { Chip } from '@/src/ui/Chip';
+import { Body } from '@/src/ui/Typography';
 import { useAppTheme } from '@/src/theme/useAppTheme';
 
 function ThemeModeRow() {
@@ -29,7 +31,8 @@ export default function SettingsScreen() {
   const t = useAppTheme();
   const { user, signOut } = useAuth();
   const { units, setUnits } = useUnits();
-  const { accent, setAccent, accentColor, accentTextOn } = useAccent();
+  const { accent, setAccent } = useAccent();
+  const { goal, setGoal } = useGoal();
 
   return (
     <Screen scroll>
@@ -38,6 +41,18 @@ export default function SettingsScreen() {
       <Card>
         <Text style={[styles.cardTitle, { color: t.colors.text }]}>Account</Text>
         <Text style={{ color: t.colors.textSecondary }}>{user?.email ?? '—'}</Text>
+      </Card>
+
+      <Card style={{ marginTop: 12 }}>
+        <Text style={[styles.cardTitle, { color: t.colors.text }]}>Goal</Text>
+        <Body muted style={{ marginBottom: 10, fontSize: 12 }}>
+          Sets how weekly suggestions are calculated.
+        </Body>
+        <View style={styles.row}>
+          <Chip label="Fat loss" active={goal === 'fat_loss'} onPress={() => setGoal('fat_loss')} activeText={t.colors.accentTextOn} activeBg={t.colors.accent} />
+          <Chip label="Maintenance" active={goal === 'maintenance'} onPress={() => setGoal('maintenance')} activeText={t.colors.accentTextOn} activeBg={t.colors.accent} />
+          <Chip label="Lean gain" active={goal === 'lean_gain'} onPress={() => setGoal('lean_gain')} activeText={t.colors.accentTextOn} activeBg={t.colors.accent} />
+        </View>
       </Card>
 
       <Card style={{ marginTop: 12 }}>

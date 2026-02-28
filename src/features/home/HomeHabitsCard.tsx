@@ -1,24 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, StyleSheet } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
-import { View } from 'react-native';
-import { Text } from '@/components/Themed';
-import { useColorScheme } from '@/components/useColorScheme';
 import { Input } from '@/src/ui/Input';
 import { Button } from '@/src/ui/Button';
-import { useAppTheme } from '@/src/theme/useAppTheme';
+import { H2, Body, Label } from '@/src/ui/Typography';
 import { fetchHabitsForDate, upsertHabitsForDate } from '@/src/features/habits/habits.repo';
 import { fetchMyProfile } from '@/src/features/profile/profile.repo';
 import { todayISO } from '@/src/features/progress/progress.repo';
 import { supabase } from '@/src/lib/supabase';
-import { useAccent } from '@/src/features/settings/AccentProvider';
 
 export function HomeHabitsCard() {
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
-  useAppTheme();
-  useAccent();
-
   const [loading, setLoading] = useState(true);
   const [proteinGoal, setProteinGoal] = useState<number | null>(null);
   const [stepsGoal, setStepsGoal] = useState<number | null>(null);
@@ -35,15 +26,12 @@ export function HomeHabitsCard() {
     try {
       const date = todayISO();
 
-      // Fetch profile + today's habits
       const [profile, habits] = await Promise.all([fetchMyProfile(), fetchHabitsForDate(date)]);
       setProteinGoal(profile.protein_goal_g);
       setStepsGoal(profile.steps_goal);
       setProtein(habits?.protein_g != null ? String(habits.protein_g) : '');
       setSteps(habits?.steps != null ? String(habits.steps) : '');
 
-      // Fetch this week's completed workout count for Quest snippet.
-      // (RLS should scope workouts to the signed-in user.)
       const now = new Date();
       const d = new Date(now);
       const day = (d.getDay() + 6) % 7; // Monday=0
@@ -117,56 +105,47 @@ export function HomeHabitsCard() {
     !loading &&
     (proteinGoal ?? 0) > 0 &&
     (stepsGoal ?? 0) > 0 &&
-    ((proteinNum == null || proteinNum === 0) && (stepsNum == null || stepsNum === 0));
+    (proteinNum == null || proteinNum === 0) &&
+    (stepsNum == null || stepsNum === 0);
 
   return (
-    <View style={styles.block}>
-      <Text style={[styles.cardTitle, isDark && styles.textLight]}>Today’s habits</Text>
+    <View>
+      <H2>Today's habits</H2>
 
       {loading ? (
-        <Text style={[styles.muted, isDark && styles.mutedDark]}>Loading…</Text>
+        <Body muted>Loading…</Body>
       ) : (
         <>
-          <Text style={[styles.muted, isDark && styles.mutedDark]}>
+          <Body muted>
             Protein goal: {proteinGoal ?? '—'}g · Steps goal: {stepsGoal ?? '—'}
-          </Text>
+          </Body>
 
-          <Text style={[styles.mini, isDark && styles.mutedDark]}>
+          <Body muted style={styles.mini}>
             🎯 3-Workout Quest: {workoutQuest.done}/3{workoutQuest.w >= 3 ? ' • cleared' : ''}
             {workoutQuest.extra > 0 ? ` • +${workoutQuest.extra} extra` : ''}
-          </Text>
+          </Body>
 
-          <Text style={[styles.mini, isDark && styles.mutedDark]}>
+          <Body muted style={styles.mini}>
             Today: Protein {proteinNum ?? 0}
             {proteinGoal ? ` / ${proteinGoal}g` : 'g'} · Steps {stepsNum ?? 0}
             {stepsGoal ? ` / ${stepsGoal}` : ''}
             {savedTick > 0 ? ' • Saved' : ''}
-          </Text>
+          </Body>
 
           {showNudge ? (
-            <Text style={[styles.nudge, isDark && styles.mutedDark]}>
+            <Body muted style={styles.mini}>
               Small wins count. Rough estimates are totally fine.
-            </Text>
+            </Body>
           ) : null}
 
           <View style={styles.row}>
             <View style={styles.field}>
-              <Text style={[styles.label, isDark && styles.mutedDark]}>Protein (g)</Text>
-              <Input
-                value={protein}
-                onChangeText={setProtein}
-                keyboardType="numeric"
-                placeholder="120"
-              />
+              <Label>Protein (g)</Label>
+              <Input value={protein} onChangeText={setProtein} keyboardType="numeric" placeholder="120" />
             </View>
             <View style={styles.field}>
-              <Text style={[styles.label, isDark && styles.mutedDark]}>Steps</Text>
-              <Input
-                value={steps}
-                onChangeText={setSteps}
-                keyboardType="numeric"
-                placeholder="8000"
-              />
+              <Label>Steps</Label>
+              <Input value={steps} onChangeText={setSteps} keyboardType="numeric" placeholder="8000" />
             </View>
           </View>
 
@@ -178,15 +157,7 @@ export function HomeHabitsCard() {
 }
 
 const styles = StyleSheet.create({
-  block: {},
-  cardTitle: { fontWeight: '700', marginBottom: 8, color: '#0f172a' },
-  textLight: { color: '#e5e7eb' },
-  muted: { color: '#334155' },
-  mutedDark: { color: '#94a3b8' },
-  mini: { marginTop: 6, fontSize: 12, color: '#475569' },
-  nudge: { marginTop: 8, fontSize: 12 },
+  mini: { marginTop: 6, fontSize: 12 },
   row: { flexDirection: 'row', gap: 12, marginTop: 10 },
   field: { flex: 1 },
-  label: { fontSize: 12, marginBottom: 6, color: '#475569' },
-  // input + button styles moved to shared UI primitives
 });

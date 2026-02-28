@@ -11,7 +11,7 @@ import { Input } from '@/src/ui/Input';
 import { H1, H2, Body, Label } from '@/src/ui/Typography';
 import { useAppTheme } from '@/src/theme/useAppTheme';
 
-import { getExerciseSlugFromName } from '@/src/features/exercise/catalog';
+import { getExerciseBySlug, getExerciseSlugFromName } from '@/src/features/exercise/catalog';
 import type { WorkoutExercise, WorkoutSet } from '@/src/features/workout/workout.repo';
 import { useUnits } from '@/src/features/settings/UnitsProvider';
 import { addSet, completeWorkout, deleteSet, fetchLastPerformance, fetchWorkout, updateSet } from '@/src/features/workout/workout.repo';
@@ -38,11 +38,14 @@ export default function WorkoutScreen() {
   const [restSeconds, setRestSeconds] = useState<number>(0);
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
   const restStorageKey = useMemo(() => `restEndsAt:${workoutId}`, [workoutId]);
+  const subsStorageKey = useMemo(() => `leanloop.substitutions:${workoutId}`, [workoutId]);
   const [banner, setBanner] = useState<string | null>(null);
   const [undo, setUndo] = useState<WorkoutSet | null>(null);
   const [editingSetId, setEditingSetId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState<{ weight: string; reps: string } | null>(null);
   const [finishing, setFinishing] = useState(false);
+  // selectedOptions[exerciseId] = index into catalog.options[] (0 = first, default)
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, number>>({});
 
   const setsByExercise = useMemo(() => {
     const map: Record<string, WorkoutSet[]> = {};
@@ -138,6 +141,31 @@ export default function WorkoutScreen() {
       }
     })();
   }, [restEndsAt, restStorageKey]);
+
+  // Load persisted substitution selections when workout changes.
+  useEffect(() => {
+    (async () => {
+      try {
+        const v = await AsyncStorage.getItem(subsStorageKey);
+        if (v) setSelectedOptions(JSON.parse(v));
+      } catch {
+        // ignore
+      }
+    })();
+  }, [subsStorageKey]);
+
+  // Persist substitution selections whenever they change.
+  useEffect(() => {
+    (async () => {
+      try {
+        if (Object.keys(selectedOptions).length > 0) {
+          await AsyncStorage.setItem(subsStorageKey, JSON.stringify(selectedOptions));
+        }
+      } catch {
+        // ignore
+      }
+    })();
+  }, [selectedOptions, subsStorageKey]);
 
   // Rest timer: derive seconds left from an absolute end timestamp.
   useEffect(() => {
@@ -377,13 +405,46 @@ export default function WorkoutScreen() {
 
         const nextSet = (logged.length ?? 0) + 1;
 
+        const catalogEntry = getExerciseBySlug(getExerciseSlugFromName(ex.exercise_name));
+        const options = catalogEntry?.options ?? [];
+        const selectedIdx = selectedOptions[ex.id] ?? 0;
+        const displayName = options.length > 0 ? options[selectedIdx] : ex.exercise_name;
+
         return (
           <Card key={ex.id} style={{ marginBottom: 12 }}>
             <Pressable onPress={() => router.push(`/exercise/${getExerciseSlugFromName(ex.exercise_name)}`)}>
               <H2 style={{ marginBottom: 2 }}>
-                {ex.position}. {ex.exercise_name}
+                {ex.position}. {displayName}
               </H2>
             </Pressable>
+
+            {options.length > 1 ? (
+              <View style={styles.optionRow}>
+                {options.map((opt, idx) => (
+                  <Pressable
+                    key={opt}
+                    onPress={() => setSelectedOptions((prev) => ({ ...prev, [ex.id]: idx }))}
+                    style={[
+                      styles.optionPill,
+                      {
+                        backgroundColor: idx === selectedIdx ? t.colors.accent : t.colors.surfaceElevated,
+                        borderColor: idx === selectedIdx ? t.colors.accent : t.colors.border,
+                      },
+                    ]}
+                  >
+                    <Body
+                      style={{
+                        fontSize: 12,
+                        fontWeight: '700',
+                        color: idx === selectedIdx ? t.colors.accentTextOn : t.colors.textSecondary,
+                      }}
+                    >
+                      {opt}
+                    </Body>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
 
             <Body muted>
               {ex.sets_planned} × {ex.rep_min}–{ex.rep_max}
@@ -490,4 +551,12 @@ const styles = StyleSheet.create({
 
   row: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginTop: 10 },
   field: { flex: 1 },
+
+  optionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6, marginBottom: 4 },
+  optionPill: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
 });

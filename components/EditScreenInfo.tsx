@@ -3,7 +3,8 @@ import { StyleSheet } from 'react-native';
 
 import { ExternalLink } from './ExternalLink';
 import { MonoText } from './StyledText';
-import { Text, View } from './Themed';
+import { View } from 'react-native';
+import { Text } from './Themed';
 
 import Colors from '@/constants/Colors';
 
@@ -19,9 +20,7 @@ export default function EditScreenInfo({ path }: { path: string }) {
         </Text>
 
         <View
-          style={[styles.codeHighlightContainer, styles.homeScreenFilename]}
-          darkColor="rgba(255,255,255,0.05)"
-          lightColor="rgba(0,0,0,0.05)">
+          style={[styles.codeHighlightContainer, styles.homeScreenFilename]}>
           <MonoText>{path}</MonoText>
         </View>
 
