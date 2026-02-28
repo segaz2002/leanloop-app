@@ -2,7 +2,8 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import React from 'react';
 import { Image, Pressable, ScrollView, StyleSheet } from 'react-native';
 
-import { Text, View } from '@/components/Themed';
+import { View } from 'react-native';
+import { Text } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
 import { getExerciseBySlug } from '@/src/features/exercise/catalog';
 import * as WebBrowser from 'expo-web-browser';

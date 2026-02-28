@@ -1,7 +1,6 @@
-import { StyleSheet } from 'react-native';
-import { Pressable } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { Text, View } from '@/components/Themed';
+import { Text } from '@/components/Themed';
 import { useAuth } from '@/src/features/auth/AuthProvider';
 import { useThemePreference } from '@/src/features/settings/ThemePreferenceProvider';
 import { GoalsCard } from '@/src/features/settings/GoalsCard';

@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet } from 'react-native';
-
-import { View } from '@/components/Themed';
+import { Alert, StyleSheet, View } from 'react-native';
 import { fetchMyProfile, updateMyGoals } from '@/src/features/profile/profile.repo';
 import { Button } from '@/src/ui/Button';
 import { Input } from '@/src/ui/Input';

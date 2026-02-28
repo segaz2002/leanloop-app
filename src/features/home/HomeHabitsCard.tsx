@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, TextInput } from 'react-native';
+import { Alert, StyleSheet } from 'react-native';
 
-import { Text, View } from '@/components/Themed';
+import { View } from 'react-native';
+import { Text } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Input } from '@/src/ui/Input';
 import { Button } from '@/src/ui/Button';
@@ -15,8 +16,7 @@ import { useAccent } from '@/src/features/settings/AccentProvider';
 export function HomeHabitsCard() {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
-  const t = useAppTheme();
-
+  useAppTheme();
   useAccent();
 
   const [loading, setLoading] = useState(true);

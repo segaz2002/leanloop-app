@@ -1,7 +1,5 @@
 import React from 'react';
-import { ScrollView, StyleProp, ViewStyle } from 'react-native';
-
-import { View } from '@/components/Themed';
+import { ScrollView, StyleProp, View, ViewStyle } from 'react-native';
 import { useAppTheme } from '@/src/theme/useAppTheme';
 
 export function Screen({

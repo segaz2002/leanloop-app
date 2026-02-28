@@ -1,7 +1,7 @@
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 
-import { Text, View } from '@/components/Themed';
+import { Text } from '@/components/Themed';
 import { useAppTheme } from '@/src/theme/useAppTheme';
 
 export function Chip({
