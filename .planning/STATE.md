@@ -9,23 +9,22 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Focus (Today)
 
 **Phase:** Phase 4 (Subscription + Paywall)
-**Today’s objective:** Begin v1.4 planning — Subscription + Paywall (IAP, trial, paywall gating).
+**Today's objective:** Execute Phase 4 — RevenueCat integration, paywall screen, feature gating.
 
 ## Current Position
 
 Status: Active development
-Last activity: 2026-02-28 — v1.3 complete. Goal picker shipped (fat loss / maintenance / lean gain). Per-goal adjustment rules live (computeAdjustments in adjustment.logic.ts). Substitution selections now persist across sessions.
+Last activity: 2026-03-01 — Phase 4 planned via GSD. 3 plans created:
+- PLAN-01: RevenueCat SDK setup + provider
+- PLAN-02: Paywall screen + trial UI
+- PLAN-03: Feature gating + webhook
 
 ## Blockers
 
-- None (core stack stable). Next blockers will be:
-  - exercise image pack licensing/source decision (placeholders currently)
-  - subscription/IAP implementation (not started — need to pick RevenueCat vs native StoreKit)
+- **Gab action needed:** RevenueCat project creation in dashboard (API keys)
+- **Gab action needed:** Apple/Google developer account IAP product setup
+- Confirm pricing: $9.99/mo, $59.99/yr, 7-day trial
 
-## Next Up (After Today)
+## Next Up (After Phase 4)
 
-Product (v1.4 / Phase 4):
-- Subscription/paywall plan
-- IAP implementation (RevenueCat recommended)
-- Trial period + paywall gating on premium features
-- App Store subscription setup
+Phase 5: Launch assets — landing page, App Store copy, Summer Body Campaign content plan.
