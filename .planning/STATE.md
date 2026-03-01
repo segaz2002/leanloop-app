@@ -14,16 +14,44 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Status: Active development
-Last activity: 2026-03-01 — Phase 4 planned via GSD. 3 plans created:
-- PLAN-01: RevenueCat SDK setup + provider
-- PLAN-02: Paywall screen + trial UI
-- PLAN-03: Feature gating + webhook
+Last activity: 2026-03-01 — Phase 4 COMPLETED. All 3 plans executed:
+- ✅ PLAN-01: RevenueCat SDK setup + provider
+- ✅ PLAN-02: Paywall screen + trial UI
+- ✅ PLAN-03: Feature gating + webhook
+
+## Implementation Details
+
+### PLAN-01: RevenueCat SDK Setup + Provider
+- ✅ Installed react-native-purchases, react-native-purchases-ui, expo-dev-client
+- ✅ Created RevenueCatProvider in src/providers/RevenueCatProvider.tsx
+- ✅ Created useSubscription hook in src/hooks/useSubscription.ts
+- ✅ Wired provider into app/_layout.tsx (after AuthProvider)
+- ✅ Converted app.json → app.config.js for environment variables
+- ✅ Added RevenueCat API keys to .env and .env.example
+- ✅ API key configured: test_akofMFCyXCzOJejESqOywDvgpKy (both iOS & Android)
+
+### PLAN-02: Paywall Screen + Trial UI
+- ✅ Created paywall screen at app/(app)/paywall.tsx with RevenueCat UI
+- ✅ TrialBanner component already existed in src/components/TrialBanner.tsx
+- ✅ Created ExpiredTrialModal in src/components/ExpiredTrialModal.tsx
+- ✅ Added TrialBanner to Home tab (index.tsx)
+- ✅ Added TrialBanner to Progress tab (progress.tsx)
+
+### PLAN-03: Feature Gating + Webhook
+- ✅ Gated "Start Workout" / "Resume Workout" in home screen
+- ✅ Gated weekly check-in submission in progress screen
+- ✅ Gated goal picker changes in settings screen
+- ✅ Updated RevenueCat webhook in functions/revenuecat-webhook/index.ts
+- ✅ Created migration SQL in docs/supabase/phase4_subscription_columns.sql
+- ✅ Added ExpiredTrialModal to all gated screens
 
 ## Blockers
 
-- **Gab action needed:** RevenueCat project creation in dashboard (API keys)
+- **Gab action needed:** Run Supabase migration (docs/supabase/phase4_subscription_columns.sql)
+- **Gab action needed:** RevenueCat project creation in dashboard (configure offerings)
 - **Gab action needed:** Apple/Google developer account IAP product setup
-- Confirm pricing: $9.99/mo, $59.99/yr, 7-day trial
+- **Gab action needed:** Deploy webhook function to Supabase Edge Functions
+- **Gab action needed:** Set REVENUECAT_WEBHOOK_SECRET in Supabase function config
 
 ## Next Up (After Phase 4)
 

@@ -39,45 +39,54 @@ serve(async (req) => {
     const payload = JSON.parse(body);
     const subscriber = payload.subscriber;
 
-    // Extract user_id from RevenueCat's `original_app_user_id` (we use email as app_user_id)
-    const appUserId = subscriber.original_app_user_id;
-    if (!appUserId || !appUserId.includes('@')) {
+    // Extract user_id from RevenueCat's `original_app_user_id`
+    // We configure RevenueCat to use Supabase user.id as app_user_id
+    const userId = subscriber.original_app_user_id;
+    if (!userId) {
       return new Response('Bad Request: invalid app_user_id', { status: 400 });
     }
 
-    // Find user by email (we store email as `auth.users.email`)
-    const { data: user, error: userError } = await supabase
-      .from('auth.users')
-      .select('id')
-      .eq('email', appUserId)
-      .limit(1);
+    // Determine subscription status and expiration
+    const entitlements = subscriber.entitlements || {};
+    const premiumEntitlement = entitlements.premium;
+    
+    let subscriptionStatus = 'none';
+    let subscriptionExpiresAt: Date | null = null;
+    let trialStartedAt: Date | null = null;
 
-    if (userError || !user?.length) {
-      return new Response(`User not found for email: ${appUserId}`, { status: 404 });
+    if (premiumEntitlement) {
+      // Check if active
+      const expiresMs = new Date(premiumEntitlement.expires_date).getTime();
+      const now = Date.now();
+      
+      if (expiresMs > now) {
+        // Active entitlement
+        if (premiumEntitlement.period_type === 'trial') {
+          subscriptionStatus = 'trialing';
+          trialStartedAt = premiumEntitlement.purchase_date 
+            ? new Date(premiumEntitlement.purchase_date) 
+            : null;
+        } else {
+          subscriptionStatus = 'active';
+        }
+        subscriptionExpiresAt = new Date(premiumEntitlement.expires_date);
+      } else {
+        subscriptionStatus = 'expired';
+      }
     }
 
-    const userId = user[0].id;
-
-    // Upsert subscription record
-    const subs = subscriber.subscriptions;
-    const activeSub = Object.values(subs).find((s: any) => s.billing_period_type === 'normal' && s.expires_date);
-
-    const subscriptionData = {
-      user_id: userId,
-      provider: 'revenuecat',
-      provider_id: activeSub?.id || null,
-      status: activeSub ? 'active' : 'canceled',
-      expires_at: activeSub?.expires_date ? new Date(activeSub.expires_date) : null,
-      created_at: new Date(),
-      updated_at: new Date(),
-    };
-
+    // Update profiles table with subscription info
     const { error } = await supabase
-      .from('subscriptions')
-      .upsert(subscriptionData, { onConflict: 'user_id' });
+      .from('profiles')
+      .update({
+        subscription_status: subscriptionStatus,
+        subscription_expires_at: subscriptionExpiresAt,
+        trial_started_at: trialStartedAt,
+      })
+      .eq('id', userId);
 
     if (error) {
-      console.error('Supabase upsert error:', error);
+      console.error('Supabase update error:', error);
       return new Response('Internal Server Error', { status: 500 });
     }
 

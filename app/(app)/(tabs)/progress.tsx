@@ -8,6 +8,9 @@ import { Button } from '@/src/ui/Button';
 import { Input } from '@/src/ui/Input';
 import { Sparkline } from '@/src/ui/Sparkline';
 import { H1, H2, Body, Label } from '@/src/ui/Typography';
+import { TrialBanner } from '@/src/components/TrialBanner';
+import { useSubscription } from '@/src/hooks/useSubscription';
+import { ExpiredTrialModal } from '@/src/components/ExpiredTrialModal';
 import { useAppTheme } from '@/src/theme/useAppTheme';
 import { fetchWeeklyStats, todayISO } from '@/src/features/progress/progress.repo';
 import type { WeeklyStats } from '@/src/features/progress/progress.logic';
@@ -32,8 +35,10 @@ export default function ProgressScreen() {
   const { units, toDisplayWeight, toKg } = useUnits();
   const { accentColor } = useAccent();
   const { goal } = useGoal();
+  const { hasActiveAccess } = useSubscription();
 
   const [loading, setLoading] = useState(true);
+  const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [weeks, setWeeks] = useState<WeeklyStats[]>([]);
   const [goals, setGoals] = useState<{ protein_goal_g: number; steps_goal: number } | null>(null);
 
@@ -203,6 +208,8 @@ export default function ProgressScreen() {
       <H1>Progress</H1>
       <Body muted>Consistency scoreboard (last 4 weeks)</Body>
 
+      <TrialBanner />
+
       {loading ? (
         <Body muted>Loading…</Body>
       ) : (
@@ -335,6 +342,12 @@ export default function ProgressScreen() {
                 <Button
                   title={weeklyCheckin || checkinSavedTick > 0 ? 'Update check-in' : 'Save check-in'}
                   onPress={async () => {
+                    // Gate check-in submission behind subscription
+                    if (!hasActiveAccess) {
+                      setShowPaywallModal(true);
+                      return;
+                    }
+
                     const w = checkinWeight.trim() === '' ? null : Number(checkinWeight);
                     const maxDisplay = units === 'lb' ? 700 : 350;
                     if (w !== null && (!Number.isFinite(w) || w <= 0 || w > maxDisplay)) {
@@ -387,6 +400,12 @@ export default function ProgressScreen() {
                     <Button
                       title="Apply to my goals"
                       onPress={async () => {
+                        // Gate goal changes behind subscription
+                        if (!hasActiveAccess) {
+                          setShowPaywallModal(true);
+                          return;
+                        }
+
                         try {
                           await updateMyGoals({ protein_goal_g: recommendations.nextProtein, steps_goal: recommendations.nextSteps });
                           setGoalsAppliedTick((x) => x + 1);
@@ -513,6 +532,11 @@ export default function ProgressScreen() {
           </Card>
         </>
       )}
+
+      <ExpiredTrialModal
+        visible={showPaywallModal}
+        onDismiss={() => setShowPaywallModal(false)}
+      />
     </Screen>
   );
 }

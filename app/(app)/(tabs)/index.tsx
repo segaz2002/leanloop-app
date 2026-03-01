@@ -8,6 +8,9 @@ import { Screen } from '@/src/ui/Screen';
 import { Card } from '@/src/ui/Card';
 import { Button } from '@/src/ui/Button';
 import { H1, Body } from '@/src/ui/Typography';
+import { TrialBanner } from '@/src/components/TrialBanner';
+import { useSubscription } from '@/src/hooks/useSubscription';
+import { ExpiredTrialModal } from '@/src/components/ExpiredTrialModal';
 import {
   abandonWorkout,
   fetchActiveWorkout,
@@ -28,10 +31,12 @@ function nextDayFromLast(last: Workout | null): DayCode {
 export default function HomeScreen() {
   const router = useRouter();
   useAccent();
+  const { hasActiveAccess } = useSubscription();
 
   const [starting, setStarting] = useState(false);
   const [active, setActive] = useState<Workout | null>(null);
   const [lastCompleted, setLastCompleted] = useState<Workout | null>(null);
+  const [showPaywallModal, setShowPaywallModal] = useState(false);
 
   const nextUp = useMemo(() => nextDayFromLast(lastCompleted), [lastCompleted]);
 
@@ -50,6 +55,12 @@ export default function HomeScreen() {
   }, []);
 
   const onPrimary = async () => {
+    // Check subscription access for starting/resuming workouts
+    if (!hasActiveAccess) {
+      setShowPaywallModal(true);
+      return;
+    }
+
     if (active) {
       router.push(`/workout/${active.id}`);
       return;
@@ -69,6 +80,12 @@ export default function HomeScreen() {
 
   const onStartNew = async () => {
     if (!active) return;
+
+    // Check subscription access
+    if (!hasActiveAccess) {
+      setShowPaywallModal(true);
+      return;
+    }
 
     Alert.alert(
       'Unfinished workout',
@@ -100,6 +117,8 @@ export default function HomeScreen() {
       <H1>LeanLoop</H1>
       <Body muted style={{ marginBottom: 16 }}>Your weekly plan that adapts.</Body>
 
+      <TrialBanner />
+
       <Card>
         <Body style={{ fontWeight: '900', marginBottom: 8 }}>Today</Body>
         <Body secondary>
@@ -122,6 +141,11 @@ export default function HomeScreen() {
       <Card style={{ marginTop: 12 }}>
         <HomeHabitsCard />
       </Card>
+
+      <ExpiredTrialModal
+        visible={showPaywallModal}
+        onDismiss={() => setShowPaywallModal(false)}
+      />
     </Screen>
   );
 }

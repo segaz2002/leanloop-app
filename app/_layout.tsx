@@ -12,6 +12,7 @@ import { ThemePreferenceProvider, useThemePreference } from '@/src/features/sett
 import { UnitsProvider } from '@/src/features/settings/UnitsProvider';
 import { AccentProvider } from '@/src/features/settings/AccentProvider';
 import { GoalProvider } from '@/src/features/settings/GoalProvider';
+import { RevenueCatProvider } from '@/src/providers/RevenueCatProvider';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -49,15 +50,17 @@ function RootLayoutNav() {
 
   return (
     <AuthProvider>
-      <UnitsProvider>
-        <GoalProvider>
-          <AccentProvider>
-            <ThemePreferenceProvider>
-              <ThemeNav />
-            </ThemePreferenceProvider>
-          </AccentProvider>
-        </GoalProvider>
-      </UnitsProvider>
+      <RevenueCatProvider>
+        <UnitsProvider>
+          <GoalProvider>
+            <AccentProvider>
+              <ThemePreferenceProvider>
+                <ThemeNav />
+              </ThemePreferenceProvider>
+            </AccentProvider>
+          </GoalProvider>
+        </UnitsProvider>
+      </RevenueCatProvider>
     </AuthProvider>
   );
 }

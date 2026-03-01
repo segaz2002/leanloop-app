@@ -7,11 +7,15 @@ import { Screen } from '@/src/ui/Screen';
 import { Card } from '@/src/ui/Card';
 import { Button } from '@/src/ui/Button';
 import { H1, H2, Body } from '@/src/ui/Typography';
+import { useSubscription } from '@/src/hooks/useSubscription';
+import { ExpiredTrialModal } from '@/src/components/ExpiredTrialModal';
 
 export default function WorkoutsScreen() {
   const router = useRouter();
   const [starting, setStarting] = useState<null | 'A' | 'B' | 'C'>(null);
   const [active, setActive] = useState<Workout | null>(null);
+  const [showPaywallModal, setShowPaywallModal] = useState(false);
+  const { hasActiveAccess } = useSubscription();
 
   const refresh = async () => {
     try {
@@ -27,6 +31,12 @@ export default function WorkoutsScreen() {
   }, []);
 
   const start = async (day: 'A' | 'B' | 'C') => {
+    // Gate: require subscription or trial
+    if (!hasActiveAccess) {
+      setShowPaywallModal(true);
+      return;
+    }
+
     if (active) {
       Alert.alert(
         'Workout in progress',
@@ -89,6 +99,11 @@ export default function WorkoutsScreen() {
       </Card>
 
       <Body muted style={{ marginTop: 12 }}>History & scheduling come next.</Body>
+
+      <ExpiredTrialModal
+        visible={showPaywallModal}
+        onDismiss={() => setShowPaywallModal(false)}
+      />
     </Screen>
   );
 }

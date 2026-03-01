@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/Themed';
@@ -13,6 +14,8 @@ import { Button } from '@/src/ui/Button';
 import { Chip } from '@/src/ui/Chip';
 import { Body } from '@/src/ui/Typography';
 import { useAppTheme } from '@/src/theme/useAppTheme';
+import { useSubscription } from '@/src/hooks/useSubscription';
+import { ExpiredTrialModal } from '@/src/components/ExpiredTrialModal';
 
 function ThemeModeRow() {
   const { mode, setMode } = useThemePreference();
@@ -33,6 +36,16 @@ export default function SettingsScreen() {
   const { units, setUnits } = useUnits();
   const { accent, setAccent } = useAccent();
   const { goal, setGoal } = useGoal();
+  const { hasActiveAccess } = useSubscription();
+  const [showPaywallModal, setShowPaywallModal] = useState(false);
+
+  const handleGoalChange = (newGoal: typeof goal) => {
+    if (!hasActiveAccess) {
+      setShowPaywallModal(true);
+      return;
+    }
+    setGoal(newGoal);
+  };
 
   return (
     <Screen scroll>
@@ -49,9 +62,9 @@ export default function SettingsScreen() {
           Sets how weekly suggestions are calculated.
         </Body>
         <View style={styles.row}>
-          <Chip label="Fat loss" active={goal === 'fat_loss'} onPress={() => setGoal('fat_loss')} activeText={t.colors.accentTextOn} activeBg={t.colors.accent} />
-          <Chip label="Maintenance" active={goal === 'maintenance'} onPress={() => setGoal('maintenance')} activeText={t.colors.accentTextOn} activeBg={t.colors.accent} />
-          <Chip label="Lean gain" active={goal === 'lean_gain'} onPress={() => setGoal('lean_gain')} activeText={t.colors.accentTextOn} activeBg={t.colors.accent} />
+          <Chip label="Fat loss" active={goal === 'fat_loss'} onPress={() => handleGoalChange('fat_loss')} activeText={t.colors.accentTextOn} activeBg={t.colors.accent} />
+          <Chip label="Maintenance" active={goal === 'maintenance'} onPress={() => handleGoalChange('maintenance')} activeText={t.colors.accentTextOn} activeBg={t.colors.accent} />
+          <Chip label="Lean gain" active={goal === 'lean_gain'} onPress={() => handleGoalChange('lean_gain')} activeText={t.colors.accentTextOn} activeBg={t.colors.accent} />
         </View>
       </Card>
 
@@ -107,6 +120,11 @@ export default function SettingsScreen() {
       </Card>
 
       <Button title="Log out" onPress={() => signOut()} style={{ marginTop: 16 }} />
+
+      <ExpiredTrialModal
+        visible={showPaywallModal}
+        onDismiss={() => setShowPaywallModal(false)}
+      />
     </Screen>
   );
 }
