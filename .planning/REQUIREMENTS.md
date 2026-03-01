@@ -1,6 +1,7 @@
 # Requirements: LeanLoop
 
-**Defined:** 2026-02-24
+**Defined:** 2026-02-24  
+**Last updated:** 2026-02-28  
 **Core Value:** Beginners get a plan they can follow and weekly adjustments that keep them progressing.
 
 ## v1 Requirements
@@ -12,7 +13,7 @@
 ### Training Plan (TRN)
 - [x] **TRN-01**: App provides a 3-day full body program (A/B/C) for an 8–12 week block.
 - [x] **TRN-02**: Each exercise has prescribed sets/reps and progression guidance (v1 rules).
-- [ ] **TRN-03**: App supports exercise substitutions (basic).
+- [x] **TRN-03**: App supports exercise substitutions (basic) — *MVP: fixed list of swaps per exercise; persisted per workout via AsyncStorage*.
 
 ### Workout Execution & Logging (LOG)
 - [x] **LOG-01**: User can log sets (weight/reps) quickly.
@@ -25,8 +26,8 @@
 - [x] **CUT-03**: Weekly adjustment suggests next-week targets (rules-based v1).
 
 ### Progress (PRG)
-- [ ] **PRG-01**: Show weight trend over time.
-- [ ] **PRG-02**: Show strength progress (PRs / top set trend).
+- [x] **PRG-01**: Show weight trend over time — *implemented as SVG sparkline + 7-day avg/delta summary*.
+- [ ] **PRG-02**: Show strength progress (PRs / top set trend) — *planned for v2*.
 
 ### Subscription (SUB)
 - [ ] **SUB-01**: iOS/Android in-app subscription with 7-day free trial.
@@ -45,4 +46,4 @@
 | Coaching chat | Not needed for v1 |
 
 ---
-*Requirements defined: 2026-02-24*
+*Requirements defined: 2026-02-24 | Updated: 2026-02-28*
